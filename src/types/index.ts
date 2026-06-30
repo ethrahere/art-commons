@@ -14,6 +14,8 @@ export type ResourceCategory =
   | "workshop"
   | "other";
 
+export type MembershipType = "none" | "lifetime";
+
 export interface Profile {
   id: string;
   username: string;
@@ -25,6 +27,8 @@ export interface Profile {
   disciplines: string[];
   social_links: Record<string, string>;
   is_verified: boolean;
+  membership_type: MembershipType;
+  membership_paid_at: string | null;
   created_at: string;
   updated_at: string;
 }

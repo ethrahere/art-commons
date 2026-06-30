@@ -1,96 +1,48 @@
-import { createServerClient } from "@/lib/supabase/server";
-import { ExternalLink, Plus } from "lucide-react";
-import Link from "next/link";
-import type { ResourceCategory, Resource } from "@/types";
+const ACCENT = "#d8a24a";
+const PANEL = "#15130f";
 
-const CATEGORY_LABELS: Record<ResourceCategory, string> = {
-  grant: "Grant",
-  supply: "Supply",
-  financial_aid: "Financial Aid",
-  tool: "Tool",
-  workshop: "Workshop",
-  other: "Other",
-};
+const OPPS = [
+  { tag: "PAINTING", daysLeft: 23, urgent: false, title: "Joan Mitchell Foundation Fellowship", body: "An unrestricted award supporting painters and sculptors at a pivotal moment in their careers.", amount: "$60,000" },
+  { tag: "ANY MEDIUM", daysLeft: 6, urgent: true, title: "NYFA City Artist Corps Grant", body: "Direct support for NYC-based artists actively engaging their communities through their work.", amount: "$5,000" },
+  { tag: "PRINTMAKING", daysLeft: 41, urgent: false, title: "Creative Capital Award", body: "Project-based funding plus advisory support for adventurous, original new work.", amount: "$50,000" },
+  { tag: "PAINTING", daysLeft: 14, urgent: false, title: "Pollock-Krasner Foundation Grant", body: "Need-based support for artists of demonstrable merit and financial need.", amount: "up to $30,000" },
+  { tag: "RESIDENCY", daysLeft: 58, urgent: false, title: "MacDowell Residency", body: "Time, space, and a private studio for focused work — travel and meals covered.", amount: "Fully funded" },
+  { tag: "ANY MEDIUM", daysLeft: 33, urgent: false, title: "Artadia Award", body: "Unrestricted, merit-based funding awarded to artists living in select cities.", amount: "$15,000" },
+];
 
-const CATEGORY_COLORS: Record<ResourceCategory, string> = {
-  grant: "text-green-400 bg-green-950",
-  supply: "text-blue-400 bg-blue-950",
-  financial_aid: "text-yellow-400 bg-yellow-950",
-  tool: "text-purple-400 bg-purple-950",
-  workshop: "text-pink-400 bg-pink-950",
-  other: "text-[var(--color-text-secondary)] bg-[var(--color-canvas-muted)]",
-};
+const PILLS = ["All", "Painting", "Printmaking", "Residencies", "Closing soon"];
 
-export default async function FinancesPage() {
-  const supabase = await createServerClient();
-  const { data: resources } = await supabase
-    .from("resources")
-    .select("*")
-    .eq("is_approved", true)
-    .order("created_at", { ascending: false }) as { data: Resource[] | null; error: unknown };
-
+export default function OpportunitiesPage() {
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Financial Resources</h1>
-          <p className="text-[var(--color-text-secondary)]">
-            Grants, supplies, tools, and financial aid for artists.
-          </p>
-        </div>
-        <Link
-          href="/finances/submit"
-          className="inline-flex items-center gap-1.5 border border-[var(--color-border)] text-[var(--color-text-secondary)] px-4 py-2 rounded-md text-sm font-medium hover:text-[var(--color-text-primary)] hover:border-[var(--color-text-secondary)] transition-colors"
-        >
-          <Plus size={16} /> Submit resource
-        </Link>
+      <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, margin: "0 0 4px", lineHeight: 1 }}>Opportunities</h1>
+      <p style={{ color: "#9a9286", margin: "0 0 22px", fontSize: 14.5 }}>Grants, fellowships, and residencies — matched to your practice.</p>
+
+      {/* Filter pills */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 22, flexWrap: "wrap" as const }}>
+        {PILLS.map((pill, i) => (
+          <span key={pill} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "7px 14px", borderRadius: 999, background: i === 0 ? ACCENT : PANEL, border: i === 0 ? "none" : "1px solid #2c271f", color: i === 0 ? "#1a1408" : "#9a9286", cursor: "pointer" }}>
+            {pill}
+          </span>
+        ))}
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        {resources?.map((resource) => (
-          <div
-            key={resource.id}
-            className="bg-[var(--color-canvas-subtle)] border border-[var(--color-border)] rounded-xl p-5"
-          >
-            <div className="flex items-start justify-between gap-3 mb-2">
-              <h3 className="font-semibold">{resource.title}</h3>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${CATEGORY_COLORS[resource.category as ResourceCategory] ?? CATEGORY_COLORS.other}`}
-              >
-                {CATEGORY_LABELS[resource.category as ResourceCategory] ?? resource.category}
-              </span>
+      {/* Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14 }}>
+        {OPPS.map((opp) => (
+          <div key={opp.title} style={{ background: PANEL, border: `1px solid ${opp.urgent ? "#3a3120" : "#262119"}`, borderRadius: 14, padding: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, padding: "3px 8px", borderRadius: 5, background: "rgba(216,162,74,0.1)", color: ACCENT }}>{opp.tag}</span>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: opp.urgent ? "#d09a6a" : "#847b6d" }}>{opp.daysLeft} days left</span>
             </div>
-
-            {resource.description && (
-              <p className="text-sm text-[var(--color-text-secondary)] mb-3 line-clamp-3">
-                {resource.description}
-              </p>
-            )}
-
-            {resource.deadline && (
-              <p className="text-xs text-[var(--color-text-secondary)] mb-3">
-                Deadline: {new Date(resource.deadline).toLocaleDateString()}
-              </p>
-            )}
-
-            {resource.url && (
-              <a
-                href={resource.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-[var(--color-accent)] hover:underline"
-              >
-                Learn more <ExternalLink size={12} />
-              </a>
-            )}
+            <h3 style={{ fontSize: 16, fontWeight: 600, margin: "0 0 6px" }}>{opp.title}</h3>
+            <p style={{ fontSize: 13, color: "#9a9286", lineHeight: 1.55, margin: "0 0 16px" }}>{opp.body}</p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 22 }}>{opp.amount}</span>
+              <button style={{ height: 34, padding: "0 16px", borderRadius: 8, border: "none", background: ACCENT, color: "#1a1408", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>Apply</button>
+            </div>
           </div>
         ))}
-
-        {(!resources || resources.length === 0) && (
-          <p className="text-[var(--color-text-secondary)] col-span-2 py-12 text-center">
-            No resources yet — submit the first one.
-          </p>
-        )}
       </div>
     </div>
   );

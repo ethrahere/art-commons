@@ -1,105 +1,194 @@
-import Link from "next/link";
-import { Brush, Users, DollarSign, BookOpen, ArrowRight } from "lucide-react";
+"use client";
 
-const features = [
+import { useState } from "react";
+import AuthModal from "@/components/auth/AuthModal";
+
+const ACCENT = "#d8a24a";
+const BG = "#0e0d0b";
+const PANEL = "#15130f";
+
+type ModalMode = "login" | "signup" | null;
+
+const FEATURES = [
   {
-    icon: DollarSign,
-    title: "Financial Resources",
-    description:
-      "Grants, emergency funds, supply subsidies, and financial tools built for artists.",
+    icon: "$",
+    title: "A shared treasury",
+    body: "Revenue from every drop splits equally between the participating artists and a common treasury — which funds materials, exhibition costs, and the infrastructure itself.",
   },
   {
-    icon: Users,
-    title: "Artist Directory",
-    description:
-      "Find and connect with artists across every discipline. Build your network.",
+    icon: "▤",
+    title: "One storefront, shared reach",
+    body: "Every drop is marketed collectively. Smaller artists gain the reach of the whole; no one builds visibility alone.",
   },
   {
-    icon: BookOpen,
-    title: "Community",
-    description:
-      "Share work, get feedback, ask for advice, and support fellow artists.",
+    icon: "◈",
+    title: "A knowledge commons",
+    body: "Grants, open calls, leads, and the invisible admin labour — researched once and shared openly across every member.",
   },
   {
-    icon: Brush,
-    title: "Supplies & Tools",
-    description:
-      "Discover resources, discounts, and tools recommended by the community.",
+    icon: "⊚",
+    title: "Governed by consensus",
+    body: "No executive, no hierarchy. The founding artists hold equal say over the treasury and who joins next — and supporters can back the commons directly.",
   },
 ];
 
 export default function LandingPage() {
+  const [modal, setModal] = useState<ModalMode>(null);
+
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)]">
-      <nav className="border-b border-[var(--color-border)] px-6 py-4 flex items-center justify-between">
-        <span className="text-xl font-semibold tracking-tight">
-          Art Commons
-        </span>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/login"
-            className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+    <div style={{ minHeight: "100vh", background: BG, color: "#efe9dd", fontFamily: "'Hanken Grotesk', system-ui, sans-serif", WebkitFontSmoothing: "antialiased" }}>
+
+      {modal && (
+        <AuthModal initialMode={modal} onClose={() => setModal(null)} />
+      )}
+
+      {/* NAV */}
+      <nav style={{ maxWidth: 1240, margin: "0 auto", padding: "26px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+          <div style={{ width: 24, height: 24, flexShrink: 0, transform: "rotate(45deg)", border: `1.5px solid ${ACCENT}`, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 7, height: 7, background: ACCENT, borderRadius: 2 }} />
+          </div>
+          <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 22 }}>The Holding</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 26 }}>
+          <a href="/directory" style={{ fontSize: 14, color: "#9a9286", textDecoration: "none" }}>Directory</a>
+          <a href="/finances" style={{ fontSize: 14, color: "#9a9286", textDecoration: "none" }}>Opportunities</a>
+          <a href="/community" style={{ fontSize: 14, color: "#9a9286", textDecoration: "none" }}>Community</a>
+          <button
+            onClick={() => setModal("login")}
+            style={{ fontSize: 14, color: "#c5bcae", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "'Hanken Grotesk', sans-serif" }}
           >
             Sign in
-          </Link>
-          <Link
-            href="/signup"
-            className="text-sm bg-[var(--color-accent)] text-[var(--color-canvas)] px-4 py-2 rounded-md font-medium hover:bg-[var(--color-accent-hover)] transition-colors"
+          </button>
+          <button
+            onClick={() => setModal("signup")}
+            style={{ fontSize: 13.5, fontWeight: 600, background: ACCENT, color: "#1a1408", padding: "9px 16px", borderRadius: 9, border: "none", cursor: "pointer", fontFamily: "'Hanken Grotesk', sans-serif" }}
           >
-            Join the commons
-          </Link>
+            Request to join
+          </button>
         </div>
       </nav>
 
-      <main>
-        <section className="px-6 py-24 text-center max-w-3xl mx-auto">
-          <h1 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
-            The commons for{" "}
-            <span className="text-[var(--color-accent)]">every artist</span>
+      {/* HERO */}
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "64px 40px 72px", display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 56, alignItems: "center" }}>
+        <div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, letterSpacing: "0.18em", textTransform: "uppercase", color: "#847b6d", border: "1px solid #2c271f", padding: "7px 13px", borderRadius: 999, marginBottom: 30 }}>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#93a877", flexShrink: 0 }} />
+            An artist-led economic commons · India
+          </div>
+          <h1 style={{ fontFamily: "'Instrument Serif', serif", fontWeight: 400, fontSize: 76, lineHeight: 0.98, letterSpacing: "-0.01em", margin: "0 0 26px" }}>
+            A place to be <em style={{ fontStyle: "italic", color: ACCENT }}>held</em>.
           </h1>
-          <p className="text-lg text-[var(--color-text-secondary)] mb-10 max-w-xl mx-auto">
-            Financial infrastructure, community support, and a directory of
-            artists — all in one place. Built by artists, for artists.
+          <p style={{ fontSize: 18, lineHeight: 1.6, color: "#b3aa9d", maxWidth: 470, margin: "0 0 36px" }}>
+            A shared treasury, a collective storefront, and an open knowledge commons — pooled resources and consensus governance, owned by the artists themselves.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 bg-[var(--color-accent)] text-[var(--color-canvas)] px-6 py-3 rounded-md font-medium hover:bg-[var(--color-accent-hover)] transition-colors"
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <button
+              onClick={() => setModal("signup")}
+              style={{ display: "inline-flex", alignItems: "center", gap: 9, background: ACCENT, color: "#1a1408", fontSize: 15, fontWeight: 600, padding: "14px 24px", borderRadius: 11, border: "none", cursor: "pointer", fontFamily: "'Hanken Grotesk', sans-serif" }}
             >
-              Join for free <ArrowRight size={16} />
-            </Link>
-            <Link
+              Request to join →
+            </button>
+            <a
               href="/directory"
-              className="inline-flex items-center gap-2 border border-[var(--color-border)] text-[var(--color-text-secondary)] px-6 py-3 rounded-md font-medium hover:text-[var(--color-text-primary)] hover:border-[var(--color-text-secondary)] transition-colors"
+              style={{ display: "inline-flex", alignItems: "center", gap: 9, border: "1px solid #2c271f", color: "#c5bcae", fontSize: 15, fontWeight: 500, padding: "14px 24px", borderRadius: 11, textDecoration: "none" }}
             >
               Browse the directory
-            </Link>
+            </a>
           </div>
-        </section>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 34, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#6f6759" }}>
+            <div style={{ display: "flex" }}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#3a2f1c,#211d16)", border: `1.5px solid ${BG}`, marginLeft: i === 0 ? 0 : -9 }} />
+              ))}
+            </div>
+            Beginning with ten founding artists
+          </div>
+        </div>
 
-        <section className="px-6 py-16 max-w-5xl mx-auto">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map(({ icon: Icon, title, description }) => (
-              <div
-                key={title}
-                className="bg-[var(--color-canvas-subtle)] border border-[var(--color-border)] rounded-xl p-6"
-              >
-                <div className="w-10 h-10 rounded-lg bg-[var(--color-accent-subtle)] flex items-center justify-center mb-4">
-                  <Icon size={20} className="text-[var(--color-accent)]" />
-                </div>
-                <h3 className="font-semibold mb-2">{title}</h3>
-                <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                  {description}
-                </p>
+        {/* Hero visual */}
+        <div style={{ position: "relative", aspectRatio: "1/1", border: "1px solid #262119", borderRadius: 20, background: PANEL, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ position: "absolute", width: "78%", height: "78%", border: "1px solid #2a241b", borderRadius: "50%" }} />
+          <div style={{ position: "absolute", width: "56%", height: "56%", border: "1px solid #2f281d", borderRadius: "50%" }} />
+          <div style={{ position: "absolute", width: "34%", height: "34%", border: "1px solid #382f20", borderRadius: "50%" }} />
+          <div style={{ width: 64, height: 64, transform: "rotate(45deg)", border: `2px solid ${ACCENT}`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 60px rgba(216,162,74,0.25)` }}>
+            <div style={{ width: 22, height: 22, background: ACCENT, borderRadius: 6 }} />
+          </div>
+          <div style={{ position: "absolute", bottom: 18, left: 18, right: 18, display: "flex", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "#6f6759" }}>
+            <span>The First Gathering</span>
+            <span>Held in common</span>
+          </div>
+        </div>
+      </section>
+
+      {/* STATS BAND */}
+      <section style={{ borderTop: "1px solid #221e18", borderBottom: "1px solid #221e18" }}>
+        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "38px 40px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 }}>
+          {[
+            { n: "10", label: "founding artists" },
+            { n: "54", label: "Hands · the first drop" },
+            { n: "50:50", label: "artists / treasury split" },
+            { n: "0", label: "executives · artist-governed" },
+          ].map(({ n, label }) => (
+            <div key={label}>
+              <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 40, lineHeight: 1 }}>{n}</div>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "#847b6d", marginTop: 8 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "80px 40px" }}>
+        <div style={{ maxWidth: 560, marginBottom: 48 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, letterSpacing: "0.2em", textTransform: "uppercase", color: ACCENT, marginBottom: 16 }}>What holds you</div>
+          <h2 style={{ fontFamily: "'Instrument Serif', serif", fontWeight: 400, fontSize: 44, lineHeight: 1.05, margin: 0 }}>Four layers, one commons.</h2>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 18 }}>
+          {FEATURES.map(({ icon, title, body }) => (
+            <div key={title} style={{ background: PANEL, border: "1px solid #262119", borderRadius: 16, padding: 28 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(216,162,74,0.12)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, color: ACCENT, fontFamily: "'Instrument Serif', serif", fontSize: 19 }}>
+                {icon}
               </div>
-            ))}
-          </div>
-        </section>
-      </main>
+              <h3 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 8px" }}>{title}</h3>
+              <p style={{ fontSize: 14.5, lineHeight: 1.6, color: "#9a9286", margin: 0 }}>{body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <footer className="border-t border-[var(--color-border)] px-6 py-8 text-center text-sm text-[var(--color-text-secondary)]">
-        Art Commons — built for the creative community
+      {/* CTA */}
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "0 40px 90px" }}>
+        <div style={{ position: "relative", overflow: "hidden", border: "1px solid #2a241b", borderRadius: 20, background: PANEL, padding: "64px 48px", textAlign: "center" }}>
+          <div style={{ position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)", width: 260, height: 260, border: "1px solid #2a241b", borderRadius: "50%", opacity: 0.6 }} />
+          <h2 style={{ position: "relative", fontFamily: "'Instrument Serif', serif", fontWeight: 400, fontSize: 48, lineHeight: 1.04, margin: "0 0 18px" }}>
+            Your practice deserves<br />somewhere to land.
+          </h2>
+          <p style={{ position: "relative", fontSize: 16.5, color: "#b3aa9d", maxWidth: 440, margin: "0 auto 30px" }}>
+            Membership is by request while we grow. Tell us about your work and we&apos;ll be in touch.
+          </p>
+          <button
+            onClick={() => setModal("signup")}
+            style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 9, background: ACCENT, color: "#1a1408", fontSize: 15, fontWeight: 600, padding: "14px 26px", borderRadius: 11, border: "none", cursor: "pointer", fontFamily: "'Hanken Grotesk', sans-serif" }}
+          >
+            Request to join →
+          </button>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ borderTop: "1px solid #221e18" }}>
+        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "32px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#6f6759" }}>
+          <span>The Holding — an artist-led commons, India</span>
+          <div style={{ display: "flex", gap: 22 }}>
+            <button onClick={() => setModal("login")} style={{ background: "none", border: "none", color: "#6f6759", fontSize: 11, cursor: "pointer", fontFamily: "'IBM Plex Mono', monospace" }}>Sign in</button>
+            <a href="#" style={{ color: "#6f6759" }}>Manifesto</a>
+            <a href="#" style={{ color: "#6f6759" }}>Contact</a>
+            <a href="#" style={{ color: "#6f6759" }}>Terms</a>
+          </div>
+        </div>
       </footer>
+
     </div>
   );
 }
