@@ -157,7 +157,7 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
 
 function SignupForm({ onSwitch }: { onSwitch: () => void }) {
   const supabase = createClient();
-  const [step, setStep] = useState<"pay" | "account" | "done">("pay");
+  const [step, setStep] = useState<"pay" | "account" | "done">("account");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -172,7 +172,7 @@ function SignupForm({ onSwitch }: { onSwitch: () => void }) {
       email,
       password,
       options: {
-        data: { display_name: displayName, membership_type: "lifetime" },
+        data: { display_name: displayName, membership_type: "none" },
         emailRedirectTo: `${location.origin}/auth/callback`,
       },
     });
@@ -267,19 +267,6 @@ function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      {/* Step indicator */}
-      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#3a3120", border: `1px solid ${ACCENT}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: ACCENT }}>✓</div>
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5f594f", letterSpacing: "0.1em" }}>PAYMENT</span>
-        </div>
-        <div style={{ flex: 1, height: 1, background: ACCENT, opacity: 0.4 }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <div style={{ width: 22, height: 22, borderRadius: "50%", background: ACCENT, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#1a1408", fontWeight: 700 }}>2</div>
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: ACCENT, letterSpacing: "0.1em" }}>ACCOUNT</span>
-        </div>
-      </div>
-
       <div>
         <Label>Your name</Label>
         <Input value={displayName} onChange={setDisplayName} placeholder="Your artist name" autoFocus />
@@ -297,13 +284,12 @@ function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
       <PrimaryButton loading={loading}>{loading ? "Creating account…" : "Create account"}</PrimaryButton>
 
-      <button
-        type="button"
-        onClick={() => setStep("pay")}
-        style={{ background: "none", border: "none", color: "#847b6d", fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 13, cursor: "pointer", padding: "2px 0" }}
-      >
-        ← Back to payment
-      </button>
+      <p style={{ textAlign: "center", fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 13, color: "#847b6d", margin: 0 }}>
+        Already a member?{" "}
+        <button type="button" onClick={onSwitch} style={{ background: "none", border: "none", color: ACCENT, fontSize: 13, cursor: "pointer", padding: 0, fontFamily: "inherit" }}>
+          Sign in →
+        </button>
+      </p>
     </form>
   );
 }
