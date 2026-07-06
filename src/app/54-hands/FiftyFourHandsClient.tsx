@@ -246,7 +246,7 @@ function CardLookSection() {
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.18em", color: T.textLabel, textTransform: "uppercase" as const, marginBottom: 6 }}>Card design</div>
       <h3 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 24, fontWeight: 400, margin: "0 0 5px" }}>What the card looks like</h3>
       <p style={{ fontSize: 13, color: T.textMuted, margin: "0 0 22px", lineHeight: 1.6 }}>
-        The front holds your artwork in the 1.8 × 2.8 in area. The back is a shared design by The Holding — the same on every card in the deck.
+        The front holds your artwork in the 1.8 × 2.8 in area. The back is a shared design by The Holding — the same on every card in the deck. Panel breaks — artwork that extends beyond the inner boundary into the surrounding frame — are allowed.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <div>
@@ -412,7 +412,7 @@ function ArtworkPreviewSection() {
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.18em", color: T.textLabel, textTransform: "uppercase" as const, marginBottom: 6 }}>Template preview</div>
       <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 26, fontWeight: 400, margin: "0 0 5px" }}>Preview your artwork in the card</h2>
       <p style={{ color: T.textMuted, margin: "0 0 22px", fontSize: 13.5, lineHeight: 1.55, maxWidth: 500 }}>
-        Upload your artwork to see how it sits in the card template. Your artwork fills the 1.8 × 2.8 in center area — the frame is designed by The Holding.
+        Upload your artwork to see how it sits in the card template. Your artwork fills the 1.8 × 2.8 in center area — the frame is designed by The Holding. Panel breaks (art that extends into the surrounding frame) are allowed.
       </p>
       <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" as const }}>
         <div style={{ flexShrink: 0 }}>
@@ -421,6 +421,13 @@ function ArtworkPreviewSection() {
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.textFaint, writingMode: "vertical-rl" as const, transform: "rotate(180deg)", letterSpacing: "0.1em" }}>← 3.5 in / 1050 px →</div>
             <div>
               <canvas ref={canvasRef} width={CW} height={CH} style={{ width: CARD_DISPLAY_W, height: CARD_DISPLAY_H, borderRadius: 8, display: "block", background: T.controlBg, border: `1px solid ${T.border}` }} />
+              <a
+                href="/card-front-template.png"
+                download="54hands-card-front-template.png"
+                style={{ marginTop: 10, width: "100%", height: 34, borderRadius: 8, border: `1px solid ${T.inputBorder}`, background: "transparent", color: T.textSecondary, fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none", boxSizing: "border-box" as const, display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                Download blank template →
+              </a>
               {artworkUrl && (
                 <button onClick={handleDownload} style={{ marginTop: 10, width: "100%", height: 34, borderRadius: 8, border: `1px solid ${T.inputBorder}`, background: "transparent", color: T.textSecondary, fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                   Download preview PNG
