@@ -791,7 +791,7 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
               <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: ACCENT, letterSpacing: "0.14em", textTransform: "uppercase" as const, flexShrink: 0, paddingTop: 2 }}>AI disclosure</div>
               <div style={{ width: 1, background: BORDER, alignSelf: "stretch", flexShrink: 0 }} />
               <div style={{ fontSize: 13, color: "#9a9286", lineHeight: 1.7 }}>
-                The planning, structure, and development of this website were made with the assistance of AI tools. The concept, vision, and creative direction behind 54 Hands and The Holding are entirely human.
+                The planning of this project and website were made with the assistance of AI tools. The concept, vision, and creative direction behind 54 Hands and The Holding are entirely human.
               </div>
             </div>
 
