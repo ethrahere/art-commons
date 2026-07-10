@@ -27,12 +27,23 @@ export default async function FiftyFourHandsPage() {
       : Promise.resolve({ data: [] }),
   ]);
 
+  const nextProject = nextProjectRaw as Project | null;
+
+  const { data: nextRegistrationsRaw } = nextProject?.id
+    ? await supabase
+        .from("public_card_registrations")
+        .select("name, card_key")
+        .eq("project_id", nextProject.id)
+    : { data: [] };
+
   return (
     <FiftyFourHandsClient
       project={project as Project}
-      nextProject={nextProjectRaw as Project | null}
+      nextProject={nextProject}
       initialRegistrations={(registrationsRaw ?? []) as PublicRegistration[]}
+      nextInitialRegistrations={(nextRegistrationsRaw ?? []) as PublicRegistration[]}
       formUrl={project?.google_form_url ?? FORM_URL}
+      nextFormUrl={nextProject?.google_form_url ?? FORM_URL}
     />
   );
 }
