@@ -9,6 +9,12 @@ const ACCENT = "#d8a24a";
 const PANEL = "#15130f";
 const BG = "#0e0d0b";
 
+// Public-facing claim page for each project — distinct from this member dashboard view
+const PUBLIC_PROJECT_PATHS: Record<string, string> = {
+  "54-hands": "/54-hands",
+  "54-hands-v2": "/54-hands/volume-2",
+};
+
 const SUITS = ["♠", "♥", "♦", "♣"] as const;
 const VALUES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"] as const;
 type Suit = (typeof SUITS)[number];
@@ -124,9 +130,9 @@ export default function ProjectsClient({ project, initialAssignments, waitingPar
       {/* Breadcrumb + header */}
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.18em", color: "#6f6759", textTransform: "uppercase" as const, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
-          <span>Projects</span>
+          <Link href="/projects" style={{ color: "#6f6759", textDecoration: "none" }}>Projects</Link>
           <span style={{ color: "#3a342b" }}>→</span>
-          <span style={{ color: ACCENT }}>Current</span>
+          <span style={{ color: ACCENT }}>{project.title}</span>
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
           <div>
@@ -134,6 +140,11 @@ export default function ProjectsClient({ project, initialAssignments, waitingPar
             <p style={{ color: "#9a9286", margin: 0, fontSize: 14.5, maxWidth: 520 }}>{project.description}</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+            {PUBLIC_PROJECT_PATHS[project.slug] && (
+              <Link href={PUBLIC_PROJECT_PATHS[project.slug]} target="_blank" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: ACCENT, textDecoration: "none" }}>
+                View public page →
+              </Link>
+            )}
             <Link href="/projects/past" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#847b6d", textDecoration: "none" }}>
               Past projects →
             </Link>

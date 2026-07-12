@@ -4,7 +4,6 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback, createContex
 import type { Project } from "@/types";
 
 const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/BnlDu61paFZLlBLuqfcosK?mode=gi_t";
-const ARTWORK_DEADLINE = "20th July";
 
 // ─── Theme (day / night) ──────────────────────────────────────────────────────
 type ThemeMode = "day" | "night";
@@ -146,10 +145,14 @@ type RegistrationResult =
 interface Props {
   project: Project;
   nextProject: Project | null;
+  nextProjectUrl: string;
   initialRegistrations: PublicRegistration[];
-  nextInitialRegistrations: PublicRegistration[];
   formUrl: string;
-  nextFormUrl: string;
+  artworkDeadline: string;
+  badgeLabel: string;
+  deckTitle: string;
+  heroDescription: string;
+  gatheringLabel: string;
 }
 
 function parseCard(key: string): { value: string; suit: string } | null {
@@ -497,7 +500,7 @@ function ArtworkPreviewSection() {
 }
 
 // ─── Result panel (step 2) ────────────────────────────────────────────────────
-function ResultPanel({ result, formUrl, onReset }: { result: RegistrationResult; formUrl: string; onReset: () => void }) {
+function ResultPanel({ result, formUrl, artworkDeadline, onReset }: { result: RegistrationResult; formUrl: string; artworkDeadline: string; onReset: () => void }) {
   const { colors: T } = useTheme();
   if (result.status === "conflict") {
     return (
@@ -528,7 +531,7 @@ function ResultPanel({ result, formUrl, onReset }: { result: RegistrationResult;
                 You got the <em style={{ color: T.accent }}>{parsed?.value} {parsed?.suit}</em>
               </h2>
               <p style={{ color: T.textBody, margin: "0 0 20px", fontSize: 14, lineHeight: 1.55 }}>
-                Your card is locked in. Create artwork sized 1.8 × 2.8 in and submit it using the form below by <strong style={{ color: T.textSecondary }}>{ARTWORK_DEADLINE}</strong>.
+                Your card is locked in. Create artwork sized 1.8 × 2.8 in and submit it using the form below by <strong style={{ color: T.textSecondary }}>{artworkDeadline}</strong>.
               </p>
             </>
           ) : (
@@ -538,7 +541,7 @@ function ResultPanel({ result, formUrl, onReset }: { result: RegistrationResult;
                 Your card is the <em style={{ color: T.accent }}>{parsed?.value} {parsed?.suit}</em>
               </h2>
               <p style={{ color: T.textBody, margin: "0 0 20px", fontSize: 14, lineHeight: 1.55 }}>
-                You&apos;re already registered. Submit your artwork using the form below by <strong style={{ color: T.textSecondary }}>{ARTWORK_DEADLINE}</strong>.
+                You&apos;re already registered. Submit your artwork using the form below by <strong style={{ color: T.textSecondary }}>{artworkDeadline}</strong>.
               </p>
             </>
           )}
@@ -559,23 +562,25 @@ function ResultPanel({ result, formUrl, onReset }: { result: RegistrationResult;
   );
 }
 
-// ─── Volume 2 panel (step 2, when all 54 cards are claimed) ──────────────────
-function VolumeTwoPanel({ nextProject, nextProjectFull }: { nextProject: Project | null; nextProjectFull: boolean }) {
+// ─── Volume 2 panel (step 2, when all cards in this project are claimed) ─────
+function VolumeTwoPanel({ nextProject, nextProjectUrl }: { nextProject: Project | null; nextProjectUrl: string }) {
   const { colors: T } = useTheme();
-  const heading = nextProjectFull ? "Both volumes are fully claimed" : "Volume 2 is coming";
-  const body = nextProjectFull
-    ? "Every card in Volume 1 and Volume 2 has been claimed. Thank you to everyone who took part — watch this space for what's next."
-    : (nextProject?.description ?? "54 more cards, 54 more artists. Registration for Volume 2 will open soon.");
   return (
     <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: "32px 26px", marginBottom: 24, textAlign: "center" as const }}>
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.2em", color: T.textLabel, textTransform: "uppercase" as const, marginBottom: 14 }}>All cards claimed</div>
-      <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, fontWeight: 400, margin: "0 0 10px" }}>{heading}</h2>
+      <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, fontWeight: 400, margin: "0 0 10px" }}>{nextProject ? "Volume 2 is open" : "Volume 2 is coming"}</h2>
       <p style={{ color: T.textBody, margin: "0 auto 24px", fontSize: 14, lineHeight: 1.65, maxWidth: 420 }}>
-        {body}
+        {nextProject?.description ?? "54 more cards, 54 more artists. Registration for Volume 2 will open soon."}
       </p>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.textFaint }}>
-        Follow <span style={{ color: T.accent }}>The Holding</span> for updates on Volume 2 registration.
-      </div>
+      {nextProject ? (
+        <a href={nextProjectUrl} style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 26px", borderRadius: 10, background: T.accent, color: T.accentOnAccent, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Hanken Grotesk', sans-serif" }}>
+          Claim a Volume 2 card →
+        </a>
+      ) : (
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.textFaint }}>
+          Follow <span style={{ color: T.accent }}>The Holding</span> for updates on Volume 2 registration.
+        </div>
+      )}
     </div>
   );
 }
@@ -608,7 +613,7 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function FiftyFourHandsClient({ project, nextProject, initialRegistrations, nextInitialRegistrations, formUrl, nextFormUrl }: Props) {
+export default function FiftyFourHandsClient({ project, nextProject, nextProjectUrl, initialRegistrations, formUrl, artworkDeadline, badgeLabel, deckTitle, heroDescription, gatheringLabel }: Props) {
   const [mode, setMode] = useState<ThemeMode>("night");
   const [step, setStep] = useState<1 | 2>(1);
   const [agreed, setAgreed] = useState(false);
@@ -617,12 +622,6 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
   const [registrations, setRegistrations] = useState<Map<string, string>>(() => {
     const map = new Map<string, string>();
     for (const r of initialRegistrations) map.set(r.card_key, r.name);
-    return map;
-  });
-  // Volume 2 state — starts filling once every Volume 1 card is claimed
-  const [nextRegistrations, setNextRegistrations] = useState<Map<string, string>>(() => {
-    const map = new Map<string, string>();
-    for (const r of nextInitialRegistrations) map.set(r.card_key, r.name);
     return map;
   });
   const [name, setName] = useState("");
@@ -636,19 +635,6 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
   const totalSlots = project.total_slots ?? 54;
   const isFull = takenCount >= totalSlots;
   const MILESTONE = 250;
-
-  const nextTakenCount = nextRegistrations.size;
-  const nextTotalSlots = nextProject?.total_slots ?? 54;
-  const nextIsFull = nextProject ? nextTakenCount >= nextTotalSlots : true;
-
-  // Once Volume 1 is fully claimed, card selection automatically moves on to Volume 2.
-  const volumeTwoOpen = isFull && !!nextProject && !nextIsFull;
-  const activeProject = volumeTwoOpen ? nextProject! : project;
-  const activeRegistrations = volumeTwoOpen ? nextRegistrations : registrations;
-  const activeTakenCount = volumeTwoOpen ? nextTakenCount : takenCount;
-  const activeTotalSlots = volumeTwoOpen ? nextTotalSlots : totalSlots;
-  const activeFormUrl = volumeTwoOpen ? nextFormUrl : formUrl;
-  const activeIsFull = isFull && !volumeTwoOpen;
 
   const T = THEMES[mode];
 
@@ -681,13 +667,12 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
     const res = await fetch("/api/54-hands/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), email: email.trim(), projectId: activeProject.id }),
+      body: JSON.stringify({ name: name.trim(), email: email.trim(), projectId: project.id }),
     });
     const data = await res.json();
     setSubmitting(false);
     if (res.ok) {
-      const setActiveRegistrations = volumeTwoOpen ? setNextRegistrations : setRegistrations;
-      setActiveRegistrations(prev => new Map(prev).set(data.card, name.trim()));
+      setRegistrations(prev => new Map(prev).set(data.card, name.trim()));
       setResult({ status: "success", card: data.card });
       setHighlightCard(data.card);
     } else if (data.error === "already_registered") {
@@ -734,10 +719,10 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
           <div>
             {/* Title */}
             <div style={{ marginBottom: 36 }}>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.2em", color: T.textFaint, textTransform: "uppercase" as const, marginBottom: 10 }}>The Holding · Project 001</div>
-              <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 52, fontWeight: 400, margin: "0 0 16px", lineHeight: 1 }}>54 Hands</h1>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.2em", color: T.textFaint, textTransform: "uppercase" as const, marginBottom: 10 }}>{badgeLabel}</div>
+              <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 52, fontWeight: 400, margin: "0 0 16px", lineHeight: 1 }}>{deckTitle}</h1>
               <p style={{ fontSize: 15.5, color: T.textBody, lineHeight: 1.65, margin: "0 0 20px", maxWidth: 580 }}>
-                A playing card deck featuring original artwork from 54 artists — one card per artist, one template by The Holding. Every participating artist receives an equal share of sales revenue.
+                {heroDescription}
               </p>
               <div style={{ display: "flex", gap: 20, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.textLabel, flexWrap: "wrap" as const }}>
                 {[
@@ -745,7 +730,7 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
                   { label: "Revenue split", value: "Equal per artist" },
                   { label: "Milestone", value: `${MILESTONE} decks → free deck` },
                   { label: "Card size", value: "2.5 × 3.5 in" },
-                  { label: "Artwork deadline", value: ARTWORK_DEADLINE },
+                  { label: "Artwork deadline", value: artworkDeadline },
                 ].map(({ label, value }) => (
                   <div key={label}>
                     <span style={{ color: T.textFaintest }}>{label}: </span>
@@ -765,7 +750,7 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
                 {[
                   { step: "01", title: "Claim a card", body: "Register with your name and email. You receive one randomly assigned card from the 54-card deck." },
                   { step: "02", title: "Create artwork", body: "Make original artwork sized 1.8 × 2.8 in, centered in the 2.5 × 3.5 in card. The Holding provides the template." },
-                  { step: "03", title: "Submit via form", body: `Upload through the Google Form by ${ARTWORK_DEADLINE}. The Holding handles production, printing, and distribution.` },
+                  { step: "03", title: "Submit via form", body: `Upload through the Google Form by ${artworkDeadline}. The Holding handles production, printing, and distribution.` },
                   { step: "04", title: "Earn & own", body: "Receive your equal share of every sale. At 250 decks, every artist gets a free copy of the deck." },
                 ].map(({ step, title, body }) => (
                   <div key={step}>
@@ -874,7 +859,7 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
 
             {/* Copyright & licensing */}
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: "28px 30px", marginBottom: 20 }}>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", color: T.textLabel, textTransform: "uppercase" as const, marginBottom: 6 }}>54 Hands: The First Gathering</div>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", color: T.textLabel, textTransform: "uppercase" as const, marginBottom: 6 }}>{gatheringLabel}</div>
               <h3 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 26, fontWeight: 400, margin: "0 0 6px" }}>Copyright & licensing</h3>
               <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.textFaint, margin: "0 0 28px", lineHeight: 1.5 }}>
                 What you need to know as an artist — written in plain language intentionally. No legalese.
@@ -1022,9 +1007,9 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
             {/* Back + title */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
               <div>
-                <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 40, fontWeight: 400, margin: "0 0 6px", lineHeight: 1 }}>{volumeTwoOpen ? "Claim your Volume 2 card" : "Claim your card"}</h1>
+                <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 40, fontWeight: 400, margin: "0 0 6px", lineHeight: 1 }}>Claim your card</h1>
                 <p style={{ fontSize: 14, color: T.textMuted, margin: 0 }}>
-                  {activeTakenCount} of {activeTotalSlots} cards claimed — {activeTotalSlots - activeTakenCount} remaining
+                  {takenCount} of {totalSlots} cards claimed — {totalSlots - takenCount} remaining
                 </p>
               </div>
               <button
@@ -1035,15 +1020,9 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
               </button>
             </div>
 
-            {volumeTwoOpen && (
-              <div style={{ background: `rgba(${T.successRgb},0.08)`, border: `1px solid ${T.successBorder}`, borderRadius: 12, padding: "14px 18px", marginBottom: 24, fontSize: 13.5, color: T.textBody, lineHeight: 1.55 }}>
-                <strong style={{ color: T.success }}>Volume 1 is fully claimed.</strong> Card selection has moved on to Volume 2 — the grid and form below are for {nextProject?.title ?? "Volume 2"}.
-              </div>
-            )}
-
             {/* Progress bar */}
             <div style={{ height: 3, background: T.divider, borderRadius: 999, marginBottom: 24, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${(activeTakenCount / activeTotalSlots) * 100}%`, background: T.accent, borderRadius: 999, transition: "width 0.4s ease" }} />
+              <div style={{ height: "100%", width: `${(takenCount / totalSlots) * 100}%`, background: T.accent, borderRadius: 999, transition: "width 0.4s ease" }} />
             </div>
 
             {/* Card grid */}
@@ -1058,7 +1037,7 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
                     <div style={{ flex: 1, display: "flex", gap: 4 }}>
                       {VALUES.map((value) => {
                         const key = `${value}${suit}`;
-                        const claimant = activeRegistrations.get(key);
+                        const claimant = registrations.get(key);
                         const isHighlighted = highlightCard === key;
                         return (
                           <div key={key} id={`card-${key}`} title={claimant ?? "Available"} style={{ flex: 1, aspectRatio: "1/1.4", borderRadius: 5, border: isHighlighted ? `1px solid ${T.accent}` : claimant ? `1px solid ${T.ghostNumber}` : `1px solid ${T.ghostBorder}`, background: isHighlighted ? `rgba(${T.accentRgb},0.14)` : claimant ? T.sunken : `rgba(${T.accentRgb},0.03)`, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 1, minWidth: 0, transition: "border-color 0.15s", boxShadow: isHighlighted ? `0 0 12px ${T.accent}20` : "none" }}>
@@ -1079,7 +1058,7 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
                   <span style={{ width: 22, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.textFainter, flexShrink: 0, textAlign: "center" as const }}>★</span>
                   <div style={{ display: "flex", gap: 4 }}>
                     {(["Joker Red", "Joker Black"] as const).map((joker) => {
-                      const claimant = activeRegistrations.get(joker);
+                      const claimant = registrations.get(joker);
                       const isHighlighted = highlightCard === joker;
                       const isRed = joker === "Joker Red";
                       return (
@@ -1095,19 +1074,19 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
               <div style={{ display: "flex", gap: 16, marginTop: 14, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.textLabel }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: T.sunken, border: `1px solid ${T.ghostNumber}`, display: "inline-block" }} />Claimed</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: `rgba(${T.accentRgb},0.03)`, border: `1px solid ${T.ghostBorder}`, display: "inline-block" }} />Available</span>
-                <span style={{ marginLeft: "auto" }}>{activeTakenCount} / {activeTotalSlots} claimed</span>
+                <span style={{ marginLeft: "auto" }}>{takenCount} / {totalSlots} claimed</span>
               </div>
             </div>
 
             {/* Registration or result or volume 2 */}
-            {!activeIsFull ? (
+            {!isFull ? (
               result ? (
-                <ResultPanel result={result} formUrl={activeFormUrl} onReset={() => { setResult(null); setHighlightCard(null); }} />
+                <ResultPanel result={result} formUrl={formUrl} artworkDeadline={artworkDeadline} onReset={() => { setResult(null); setHighlightCard(null); }} />
               ) : (
                 <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: "24px 26px", marginBottom: 24 }}>
-                  <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 26, fontWeight: 400, margin: "0 0 6px" }}>{volumeTwoOpen ? "Claim your Volume 2 card" : "Claim your card"}</h2>
+                  <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 26, fontWeight: 400, margin: "0 0 6px" }}>Claim your card</h2>
                   <p style={{ color: T.textMuted, margin: "0 0 22px", fontSize: 13.5, lineHeight: 1.55 }}>
-                    Enter your name and email — you&apos;ll be randomly assigned one of the {activeTotalSlots - activeTakenCount} remaining cards. Your assignment is permanent once confirmed.
+                    Enter your name and email — you&apos;ll be randomly assigned one of the {totalSlots - takenCount} remaining cards. Your assignment is permanent once confirmed.
                   </p>
                   <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column" as const, gap: 14 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -1138,18 +1117,18 @@ export default function FiftyFourHandsClient({ project, nextProject, initialRegi
                 </div>
               )
             ) : (
-              <VolumeTwoPanel nextProject={nextProject} nextProjectFull={!!nextProject && nextIsFull} />
+              <VolumeTwoPanel nextProject={nextProject} nextProjectUrl={nextProjectUrl} />
             )}
 
             {/* Submission info */}
-            {!result && !activeIsFull && (
+            {!result && !isFull && (
               <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: "20px 26px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
                   <div>
                     <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 22, fontWeight: 400, margin: "0 0 5px" }}>Already have your card?</h2>
-                    <p style={{ color: T.textMuted, margin: 0, fontSize: 13 }}>Submit your artwork using the Google Form below by {ARTWORK_DEADLINE}.</p>
+                    <p style={{ color: T.textMuted, margin: 0, fontSize: 13 }}>Submit your artwork using the Google Form below by {artworkDeadline}.</p>
                   </div>
-                  <a href={activeFormUrl} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0, height: 42, padding: "0 20px", borderRadius: 10, background: T.accent, color: T.accentOnAccent, fontWeight: 600, fontSize: 14, textDecoration: "none", fontFamily: "'Hanken Grotesk', sans-serif", display: "flex", alignItems: "center", whiteSpace: "nowrap" as const }}>
+                  <a href={formUrl} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0, height: 42, padding: "0 20px", borderRadius: 10, background: T.accent, color: T.accentOnAccent, fontWeight: 600, fontSize: 14, textDecoration: "none", fontFamily: "'Hanken Grotesk', sans-serif", display: "flex", alignItems: "center", whiteSpace: "nowrap" as const }}>
                     Submit artwork →
                   </a>
                 </div>

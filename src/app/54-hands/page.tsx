@@ -29,21 +29,18 @@ export default async function FiftyFourHandsPage() {
 
   const nextProject = nextProjectRaw as Project | null;
 
-  const { data: nextRegistrationsRaw } = nextProject?.id
-    ? await supabase
-        .from("public_card_registrations")
-        .select("name, card_key")
-        .eq("project_id", nextProject.id)
-    : { data: [] };
-
   return (
     <FiftyFourHandsClient
       project={project as Project}
       nextProject={nextProject}
+      nextProjectUrl="/54-hands/volume-2"
       initialRegistrations={(registrationsRaw ?? []) as PublicRegistration[]}
-      nextInitialRegistrations={(nextRegistrationsRaw ?? []) as PublicRegistration[]}
       formUrl={project?.google_form_url ?? FORM_URL}
-      nextFormUrl={nextProject?.google_form_url ?? FORM_URL}
+      artworkDeadline="20th July"
+      badgeLabel="The Holding · Project 001"
+      deckTitle="54 Hands"
+      heroDescription="A playing card deck featuring original artwork from 54 artists — one card per artist, one template by The Holding. Every participating artist receives an equal share of sales revenue."
+      gatheringLabel="54 Hands: The First Gathering"
     />
   );
 }

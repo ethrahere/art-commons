@@ -46,7 +46,7 @@ export default function PastProjectsPage() {
           href="/projects"
           style={{ display: "inline-flex", alignItems: "center", height: 38, padding: "0 18px", borderRadius: 10, background: ACCENT, color: "#1a1408", fontWeight: 600, fontSize: 13.5, textDecoration: "none", fontFamily: "'Hanken Grotesk', sans-serif" }}
         >
-          View current project →
+          View active projects →
         </Link>
       </div>
 
