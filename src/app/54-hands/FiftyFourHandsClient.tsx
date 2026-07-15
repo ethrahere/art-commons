@@ -144,8 +144,6 @@ type RegistrationResult =
 
 interface Props {
   project: Project;
-  nextProject: Project | null;
-  nextProjectUrl: string;
   initialRegistrations: PublicRegistration[];
   formUrl: string;
   artworkDeadline: string;
@@ -562,29 +560,6 @@ function ResultPanel({ result, formUrl, artworkDeadline, onReset }: { result: Re
   );
 }
 
-// ─── Volume 2 panel (step 2, when all cards in this project are claimed) ─────
-function VolumeTwoPanel({ nextProject, nextProjectUrl }: { nextProject: Project | null; nextProjectUrl: string }) {
-  const { colors: T } = useTheme();
-  return (
-    <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: "32px 26px", marginBottom: 24, textAlign: "center" as const }}>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.2em", color: T.textLabel, textTransform: "uppercase" as const, marginBottom: 14 }}>All cards claimed</div>
-      <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, fontWeight: 400, margin: "0 0 10px" }}>{nextProject ? "Volume 2 is open" : "Volume 2 is coming"}</h2>
-      <p style={{ color: T.textBody, margin: "0 auto 24px", fontSize: 14, lineHeight: 1.65, maxWidth: 420 }}>
-        {nextProject?.description ?? "54 more cards, 54 more artists. Registration for Volume 2 will open soon."}
-      </p>
-      {nextProject ? (
-        <a href={nextProjectUrl} style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 26px", borderRadius: 10, background: T.accent, color: T.accentOnAccent, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Hanken Grotesk', sans-serif" }}>
-          Claim a Volume 2 card →
-        </a>
-      ) : (
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.textFaint }}>
-          Follow <span style={{ color: T.accent }}>The Holding</span> for updates on Volume 2 registration.
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Reusable bullet list ─────────────────────────────────────────────────────
 function BulletList({ items }: { items: { head: string; body: string }[] }) {
   const { colors: T } = useTheme();
@@ -613,7 +588,7 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function FiftyFourHandsClient({ project, nextProject, nextProjectUrl, initialRegistrations, formUrl, artworkDeadline, badgeLabel, deckTitle, heroDescription, gatheringLabel }: Props) {
+export default function FiftyFourHandsClient({ project, initialRegistrations, formUrl, artworkDeadline, badgeLabel, deckTitle, heroDescription, gatheringLabel }: Props) {
   const [mode, setMode] = useState<ThemeMode>("night");
   const [step, setStep] = useState<1 | 2>(1);
   const [agreed, setAgreed] = useState(false);
@@ -1117,11 +1092,17 @@ export default function FiftyFourHandsClient({ project, nextProject, nextProject
                 </div>
               )
             ) : (
-              <VolumeTwoPanel nextProject={nextProject} nextProjectUrl={nextProjectUrl} />
+              <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: "32px 26px", marginBottom: 24, textAlign: "center" as const }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.2em", color: T.textLabel, textTransform: "uppercase" as const, marginBottom: 14 }}>All cards claimed</div>
+                <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, fontWeight: 400, margin: "0 0 10px" }}>Every card has been claimed</h2>
+                <p style={{ color: T.textBody, margin: "0 auto", fontSize: 14, lineHeight: 1.65, maxWidth: 420 }}>
+                  Already have a card? Submit your artwork using the form below.
+                </p>
+              </div>
             )}
 
-            {/* Submission info */}
-            {!result && !isFull && (
+            {/* Submission info — always available to existing card-holders, regardless of whether new cards remain */}
+            {!result && (
               <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: "20px 26px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
                   <div>

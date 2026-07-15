@@ -26,8 +26,6 @@ export default async function FiftyFourHandsVolumeTwoPage() {
   return (
     <FiftyFourHandsClient
       project={project as Project}
-      nextProject={null}
-      nextProjectUrl="/54-hands/volume-2"
       initialRegistrations={(registrationsRaw ?? []) as PublicRegistration[]}
       formUrl={project?.google_form_url ?? FORM_URL}
       artworkDeadline="TBC"
