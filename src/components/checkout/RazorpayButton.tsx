@@ -7,7 +7,7 @@ interface RazorpayButtonProps {
   currency?: string;
   description?: string;
   label?: string;
-  onSuccess?: (paymentId: string) => void;
+  onSuccess?: (response: RazorpayResponse) => void;
   onError?: (message: string) => void;
 }
 
@@ -94,7 +94,7 @@ export default function RazorpayButton({
           });
 
           if (verifyRes.ok) {
-            onSuccess?.(response.razorpay_payment_id);
+            onSuccess?.(response);
           } else {
             const { error } = await verifyRes.json();
             const msg = error ?? "Payment verification failed";

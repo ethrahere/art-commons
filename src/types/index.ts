@@ -46,6 +46,8 @@ export type ParticipantStatus = "pending" | "accepted" | "rejected";
 
 export type SubmissionStatus = "pending" | "approved" | "rejected" | "revision_requested";
 
+export type SkillKind = "offer" | "need";
+
 export type NotificationType =
   | "new_follower"
   | "post_like"
@@ -217,6 +219,15 @@ export interface ProjectSubmission {
   submitted_at: string;
   reviewed_at: string | null;
   reviewed_by: string | null;
+}
+
+export interface SkillEntry {
+  id: string;
+  profile_id: string;
+  kind: SkillKind;
+  skill: string;
+  note: string | null;
+  created_at: string;
 }
 
 export interface Notification {

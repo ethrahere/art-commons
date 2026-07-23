@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, createContext, useContext } from "react";
 import type { Project } from "@/types";
 
-const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/BnlDu61paFZLlBLuqfcosK?mode=gi_t";
+const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/CBgnupCZu7HA0F20Ra4Q3R?mode=gi_t";
 
 // ─── Theme (day / night) ──────────────────────────────────────────────────────
 type ThemeMode = "day" | "night";
@@ -151,6 +151,7 @@ interface Props {
   deckTitle: string;
   heroDescription: string;
   gatheringLabel: string;
+  preOrderUrl?: string;
 }
 
 function parseCard(key: string): { value: string; suit: string } | null {
@@ -588,7 +589,7 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function FiftyFourHandsClient({ project, initialRegistrations, formUrl, artworkDeadline, badgeLabel, deckTitle, heroDescription, gatheringLabel }: Props) {
+export default function FiftyFourHandsClient({ project, initialRegistrations, formUrl, artworkDeadline, badgeLabel, deckTitle, heroDescription, gatheringLabel, preOrderUrl }: Props) {
   const [mode, setMode] = useState<ThemeMode>("night");
   const [step, setStep] = useState<1 | 2>(1);
   const [agreed, setAgreed] = useState(false);
@@ -1095,9 +1096,14 @@ export default function FiftyFourHandsClient({ project, initialRegistrations, fo
               <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: "32px 26px", marginBottom: 24, textAlign: "center" as const }}>
                 <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.2em", color: T.textLabel, textTransform: "uppercase" as const, marginBottom: 14 }}>All cards claimed</div>
                 <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 30, fontWeight: 400, margin: "0 0 10px" }}>Every card has been claimed</h2>
-                <p style={{ color: T.textBody, margin: "0 auto", fontSize: 14, lineHeight: 1.65, maxWidth: 420 }}>
+                <p style={{ color: T.textBody, margin: "0 auto", fontSize: 14, lineHeight: 1.65, maxWidth: 420, marginBottom: preOrderUrl ? 22 : 0 }}>
                   Already have a card? Submit your artwork using the form below.
                 </p>
+                {preOrderUrl && (
+                  <a href={preOrderUrl} style={{ display: "inline-flex", alignItems: "center", height: 44, padding: "0 26px", borderRadius: 10, background: T.accent, color: T.accentOnAccent, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Hanken Grotesk', sans-serif" }}>
+                    Pre-order the deck →
+                  </a>
+                )}
               </div>
             )}
 

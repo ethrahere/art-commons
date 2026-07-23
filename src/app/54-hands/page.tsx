@@ -33,6 +33,7 @@ export default async function FiftyFourHandsPage() {
       deckTitle="54 Hands"
       heroDescription="A playing card deck featuring original artwork from 54 artists — one card per artist, one template by The Holding. Every participating artist receives an equal share of sales revenue."
       gatheringLabel="54 Hands: The First Gathering"
+      preOrderUrl="/54-hands/pre-order"
     />
   );
 }
