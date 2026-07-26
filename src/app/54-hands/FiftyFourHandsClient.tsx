@@ -863,13 +863,13 @@ export default function FiftyFourHandsClient({ project, initialRegistrations, fo
                 <div>
                   <SectionLabel label="The license you're granting" />
                   <p style={{ fontSize: 13.5, color: T.textBody, lineHeight: 1.7, margin: "0 0 14px" }}>
-                    By submitting your artwork you&apos;re granting Ethra / The Holding a <strong style={{ color: T.textSecondary }}>limited, non-exclusive, royalty-free license</strong> to use your artwork solely for the purposes described above.
+                    By submitting your artwork you&apos;re granting Ethra / The Holding a <strong style={{ color: T.textSecondary }}>limited, non-exclusive, revenue-sharing license</strong> to use your artwork solely for the purposes described above.
                   </p>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
                     {[
                       { term: "Non-exclusive", body: "You can still use your artwork anywhere else." },
                       { term: "Limited", body: "We can only use it for 54 Hands." },
-                      { term: "Royalty-free", body: "No separate licensing fee — your revenue share is your compensation." },
+                      { term: "Revenue-sharing", body: "No separate licensing fee — your revenue share is your compensation." },
                     ].map(({ term, body }) => (
                       <div key={term} style={{ background: T.sunken, border: `1px solid ${T.divider}`, borderRadius: 10, padding: "14px 16px" }}>
                         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.accent, marginBottom: 6 }}>{term}</div>
