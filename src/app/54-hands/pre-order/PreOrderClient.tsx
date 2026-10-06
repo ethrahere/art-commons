@@ -446,7 +446,6 @@ export default function PreOrderClient({ projectId, projectTitle, artists, fanKe
               {error && <div className={styles.errorBox}>{error}</div>}
 
               <div className={styles.secure}>🔒 Secure payment via Razorpay</div>
-              <p className={styles.disclaimer}>Price is a placeholder and may change before the deck ships.</p>
             </aside>
           </div>
         </section>

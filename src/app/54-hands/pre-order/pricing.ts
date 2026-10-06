@@ -1,8 +1,8 @@
 // Shared by the pre-order page and the API routes so the server never trusts a
-// client-sent amount. Placeholder values — update once real pricing is confirmed.
+// client-sent amount. ₹710 is the invite-only pre-order price.
 
 export const DECK_SKU = "54-hands-deck-v1";
-export const UNIT_PRICE_PAISE = 2400 * 100;
+export const UNIT_PRICE_PAISE = 710 * 100;
 export const MAX_QUANTITY = 50;
 
 // Delivery methods shown inside Razorpay Magic Checkout (served by
