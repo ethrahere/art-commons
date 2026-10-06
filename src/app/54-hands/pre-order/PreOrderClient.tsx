@@ -147,7 +147,7 @@ export default function PreOrderClient({ projectId, projectTitle, artists, fanKe
     }
 
     const rzp = new window.Razorpay({
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      key: data.keyId,
       name: "The Holding",
       description: `${projectTitle} — deck pre-order (× ${quantity})`,
       order_id: data.orderId,

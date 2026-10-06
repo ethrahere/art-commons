@@ -113,7 +113,14 @@ export async function POST(request: Request) {
       notes,
     } as unknown as Orders.RazorpayOrderCreateRequestBody);
 
-    return NextResponse.json({ orderId: order.id, amount: order.amount, currency: order.currency });
+    // The key ID is public (checkout.js needs it in the browser); sending it from
+    // here means it always matches the secret the order was created with.
+    return NextResponse.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
+    });
   } catch (error) {
     console.error("[54-hands/preorder/order]", error);
     return NextResponse.json({ error: "Could not start checkout." }, { status: 500 });
