@@ -1,218 +1,487 @@
 "use client";
 
-import { useState } from "react";
-import RazorpayButton from "@/components/checkout/RazorpayButton";
-
-const ACCENT = "#d8a24a";
-const PANEL = "#15130f";
-const BG = "#0e0d0b";
-const BORDER = "#262119";
-
-// Placeholder price — update once real pricing is confirmed.
-const UNIT_PRICE_INR = 999;
+import { useEffect, useState } from "react";
+import { DeckBack, DeckCard } from "./DeckCard";
+import { DECK } from "./deck";
+import { MAX_QUANTITY, SHIPPING_METHODS, UNIT_PRICE_PAISE } from "./pricing";
+import {
+  EMPTY_SHIPPING_DETAILS,
+  INDIAN_STATES,
+  MAGIC_CHECKOUT_ENABLED,
+  normalizePhone,
+  validateShippingDetails,
+  type ShippingDetails,
+  type ShippingErrors,
+} from "./address";
+import styles from "./preorder.module.css";
 
 interface Props {
   projectId: string;
   projectTitle: string;
+  /** card_key → artist name, from public_card_registrations. */
+  artists: Record<string, string>;
+  /** Card keys dealt into the hero fan, left to right — drawn at random per request. */
+  fanKeys: string[];
 }
+
+interface CheckoutResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface Confirmation {
+  paymentId: string;
+  email: string;
+  totalPaise: number;
+}
+
+
+const SHIPPING_METHOD_IDS = SHIPPING_METHODS.map(m => m.id);
 
 function formatINR(paise: number): string {
   return `₹${(paise / 100).toLocaleString("en-IN")}`;
 }
 
-export default function PreOrderClient({ projectId, projectTitle }: Props) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [addressLine1, setAddressLine1] = useState("");
-  const [addressLine2, setAddressLine2] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [postalCode, setPostalCode] = useState("");
-  const [country, setCountry] = useState("India");
+export default function PreOrderClient({ projectId, projectTitle, artists, fanKeys }: Props) {
+  const fanCards = fanKeys.map(key => DECK.find(c => c.key === key)!);
   const [quantity, setQuantity] = useState(1);
-  const [saving, setSaving] = useState(false);
+  const [newsletterOptIn, setNewsletterOptIn] = useState(true);
+  const [shipping, setShipping] = useState<ShippingDetails>(EMPTY_SHIPPING_DETAILS);
+  const [showErrors, setShowErrors] = useState(false);
+  const [serverFieldErrors, setServerFieldErrors] = useState<ShippingErrors>({});
+  const [scriptReady, setScriptReady] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
 
-  const totalPaise = UNIT_PRICE_INR * 100 * quantity;
+  const artistNames = Object.values(artists);
+  const subtotalPaise = UNIT_PRICE_PAISE * quantity;
+  const selectedMethod = SHIPPING_METHODS.find(m => m.id === shipping.shippingMethod);
+  const shippingPaise = MAGIC_CHECKOUT_ENABLED ? null : selectedMethod?.shipping_fee ?? 0;
+  const totalPaise = subtotalPaise + (shippingPaise ?? 0);
 
-  const formValid =
-    name.trim().length > 1 &&
-    email.includes("@") &&
-    phone.trim().length >= 6 &&
-    addressLine1.trim().length > 0 &&
-    city.trim().length > 0 &&
-    state.trim().length > 0 &&
-    postalCode.trim().length > 0 &&
-    quantity >= 1;
+  const fieldErrors: ShippingErrors = MAGIC_CHECKOUT_ENABLED
+    ? {}
+    : { ...serverFieldErrors, ...(showErrors ? validateShippingDetails(shipping, SHIPPING_METHOD_IDS) : {}) };
 
-  async function handlePaymentSuccess(response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
-    setSaving(true);
-    setError(null);
+  useEffect(() => {
+    if (window.Razorpay) {
+      setScriptReady(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = MAGIC_CHECKOUT_ENABLED
+      ? "https://checkout.razorpay.com/v1/magic-checkout.js"
+      : "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => setScriptReady(true);
+    script.onerror = () => setError("Couldn't load the payment gateway. Please refresh and try again.");
+    document.body.appendChild(script);
+  }, []);
+
+  function update<K extends keyof ShippingDetails>(key: K, value: ShippingDetails[K]) {
+    setShipping(s => ({ ...s, [key]: value }));
+    setServerFieldErrors(e => ({ ...e, [key]: undefined }));
+  }
+
+  async function confirmPreorder(response: CheckoutResponse) {
     const res = await fetch("/api/54-hands/preorder", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        projectId,
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        addressLine1: addressLine1.trim(),
-        addressLine2: addressLine2.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        postalCode: postalCode.trim(),
-        country: country.trim(),
-        quantity,
-        unitPricePaise: UNIT_PRICE_INR * 100,
         razorpayOrderId: response.razorpay_order_id,
         razorpayPaymentId: response.razorpay_payment_id,
         razorpaySignature: response.razorpay_signature,
       }),
     });
-    setSaving(false);
+    const data = await res.json().catch(() => null);
+    setBusy(false);
     if (res.ok) {
-      setOrderId(response.razorpay_payment_id);
+      setConfirmation({ paymentId: response.razorpay_payment_id, email: data?.email ?? "", totalPaise: data?.totalPaise ?? totalPaise });
+      window.scrollTo({ top: 0 });
     } else {
-      const data = await res.json().catch(() => null);
       setError(
-        `Your payment went through (ID: ${response.razorpay_payment_id}) but we couldn't save your order details: ${data?.error ?? "unknown error"}. Please contact us with this payment ID so we can sort it out.`
+        `Your payment went through (ID: ${response.razorpay_payment_id}) but we couldn't save your order: ${data?.error ?? "unknown error"}. Please contact us with this payment ID so we can sort it out.`
       );
     }
   }
 
-  if (orderId) {
+  async function handleCheckout() {
+    setError(null);
+
+    if (!MAGIC_CHECKOUT_ENABLED && Object.keys(validateShippingDetails(shipping, SHIPPING_METHOD_IDS)).length > 0) {
+      setShowErrors(true);
+      document.getElementById("delivery-details")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    setBusy(true);
+    const res = await fetch("/api/54-hands/preorder/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId,
+        quantity,
+        newsletterOptIn,
+        ...(MAGIC_CHECKOUT_ENABLED ? {} : { shipping }),
+      }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.orderId) {
+      if (data?.fields) setServerFieldErrors(data.fields);
+      setError(data?.error ?? "Couldn't start checkout. Please try again.");
+      setBusy(false);
+      return;
+    }
+
+    const rzp = new window.Razorpay({
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      name: "The Holding",
+      description: `${projectTitle} — deck pre-order (× ${quantity})`,
+      order_id: data.orderId,
+      theme: { color: "#d8a24a" },
+      modal: { ondismiss: () => setBusy(false) },
+      handler: confirmPreorder,
+      ...(MAGIC_CHECKOUT_ENABLED
+        ? // Magic Checkout collects contact, email, address and delivery method itself.
+          { one_click_checkout: true, show_coupons: false }
+        : {
+            amount: data.amount,
+            currency: data.currency,
+            prefill: { name: shipping.name.trim(), email: shipping.email.trim(), contact: `+91${normalizePhone(shipping.phone)}` },
+          }),
+    });
+    rzp.on("payment.failed", res => {
+      setError(res.error.description);
+      setBusy(false);
+    });
+    rzp.open();
+  }
+
+  if (confirmation) {
     return (
-      <div style={{ minHeight: "100vh", background: BG, color: "#efe9dd", fontFamily: "'Hanken Grotesk', system-ui, sans-serif" }}>
-        <div style={{ maxWidth: 560, margin: "0 auto", padding: "72px 24px", textAlign: "center" as const }}>
-          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(147,168,119,0.12)", border: "1px solid #3a4430", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 22 }}>✓</div>
-          <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 34, fontWeight: 400, margin: "0 0 10px" }}>Pre-order confirmed</h1>
-          <p style={{ color: "#9a9286", fontSize: 14.5, lineHeight: 1.6, margin: "0 0 6px" }}>
-            {quantity} × {projectTitle} deck{quantity > 1 ? "s" : ""} — {formatINR(totalPaise)} paid.
+      <div className={styles.page}>
+        <div className={styles.confirm}>
+          <div className={styles.confirmFan}>
+            {fanCards.slice(1, 4).map((card, i) => (
+              <div key={card.key} style={{ transform: `rotate(${(i - 1) * 12}deg)` }}>
+                <DeckCard card={card} artist={artists[card.key]} eager />
+              </div>
+            ))}
+          </div>
+          <div className={styles.eyebrow}>Pre-order confirmed</div>
+          <h1>Your hand is dealt.</h1>
+          <p>
+            {quantity} × {projectTitle} deck{quantity > 1 ? "s" : ""} — {formatINR(confirmation.totalPaise)} paid, including delivery.
           </p>
-          <p style={{ color: "#6f6759", fontSize: 12.5, fontFamily: "'IBM Plex Mono', monospace", margin: 0 }}>
-            Payment ID: {orderId}
-          </p>
-          <p style={{ color: "#847b6d", fontSize: 13.5, lineHeight: 1.6, marginTop: 20 }}>
-            We'll email {email} with shipping updates once the deck goes into production.
-          </p>
+          {confirmation.email && (
+            <p>We&apos;ll email {confirmation.email} with shipping updates once the deck goes to print.</p>
+          )}
+          <p className={styles.confirmId}>Payment ID · {confirmation.paymentId}</p>
+          <div style={{ marginTop: 32 }}>
+            <a href="/54-hands" className={styles.buttonGhost}>
+              Back to 54 Hands
+            </a>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, color: "#efe9dd", fontFamily: "'Hanken Grotesk', system-ui, sans-serif" }}>
-      <div style={{ maxWidth: 640, margin: "0 auto", padding: "48px 24px 80px" }}>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.2em", color: "#5f594f", textTransform: "uppercase" as const, marginBottom: 10 }}>
-          The Holding · Pre-order
-        </div>
-        <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 44, fontWeight: 400, margin: "0 0 12px", lineHeight: 1.05 }}>
-          Pre-order {projectTitle}
-        </h1>
-        <p style={{ color: "#9a9286", fontSize: 15, lineHeight: 1.6, margin: "0 0 8px" }}>
-          Reserve your printed deck. Every card is fully claimed and in production — this is for buying the finished physical deck, not claiming a card.
-        </p>
-        <p style={{ color: "#5f594f", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", margin: "0 0 32px" }}>
-          Price shown is a placeholder and subject to change before shipping.
-        </p>
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <nav className={styles.nav}>
+          <a href="/54-hands" className={styles.navLink}>
+            ← 54 Hands
+          </a>
+          <span className={styles.eyebrow}>The Holding · Project 001</span>
+        </nav>
 
-        <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: "26px 28px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22, paddingBottom: 20, borderBottom: `1px solid ${BORDER}` }}>
-            <div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.16em", color: "#6f6759", textTransform: "uppercase" as const, marginBottom: 6 }}>Price per deck</div>
-              <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 26 }}>{formatINR(UNIT_PRICE_INR * 100)}</div>
+        {/* ─── Hero ─── */}
+        <header className={styles.hero}>
+          <div>
+            <div className={styles.eyebrow}>Pre-order · First edition</div>
+            <h1 className={styles.title}>
+              54 <em>Hands</em>
+            </h1>
+            <p className={styles.lede}>
+              A deck of playing cards where <strong>every card is drawn by a different artist</strong>. Fifty-four cards,
+              fifty-four artists, one shared frame.
+            </p>
+            <div className={styles.priceRow}>
+              <span className={styles.price}>{formatINR(UNIT_PRICE_PAISE)}</span>
+              <span className={styles.priceNote}>per deck · ships across India</span>
             </div>
-            <div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.16em", color: "#6f6759", textTransform: "uppercase" as const, marginBottom: 6, textAlign: "right" as const }}>Quantity</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button type="button" onClick={() => setQuantity(q => Math.max(1, q - 1))} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${BORDER}`, background: "transparent", color: "#c9bfaf", cursor: "pointer", fontSize: 15 }}>−</button>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 16, minWidth: 20, textAlign: "center" as const }}>{quantity}</span>
-                <button type="button" onClick={() => setQuantity(q => Math.min(20, q + 1))} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${BORDER}`, background: "transparent", color: "#c9bfaf", cursor: "pointer", fontSize: 15 }}>+</button>
+            <div className={styles.ctaRow}>
+              <a href="#checkout" className={styles.button}>
+                Pre-order the deck →
+              </a>
+              <a href="/54-hands" className={styles.buttonGhost}>
+                About the project
+              </a>
+            </div>
+            <div className={styles.stats}>
+              <div className={styles.stat}>
+                <b>54</b>
+                <span>Cards</span>
+              </div>
+              <div className={styles.stat}>
+                <b>54</b>
+                <span>Artists</span>
+              </div>
+              <div className={styles.stat}>
+                <b>1 / 54</b>
+                <span>Share of sales each</span>
               </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column" as const, gap: 14 }}>
-            <div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", color: "#847b6d", textTransform: "uppercase" as const, marginBottom: 7 }}>Full name</div>
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name"
-                style={{ width: "100%", boxSizing: "border-box" as const, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, color: "#efe9dd", padding: "11px 14px", fontSize: 14, fontFamily: "'Hanken Grotesk', sans-serif", outline: "none" }} />
+          <div className={styles.fan} aria-hidden="true">
+            <div className={`${styles.fanCard} ${styles.fanBack}`} style={{ "--i": 0, "--abs": 0, "--n": 0, transform: "translate(18px, -8px) rotate(4deg)" } as React.CSSProperties}>
+              <DeckBack />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", color: "#847b6d", textTransform: "uppercase" as const, marginBottom: 7 }}>Email</div>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"
-                  style={{ width: "100%", boxSizing: "border-box" as const, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, color: "#efe9dd", padding: "11px 14px", fontSize: 14, fontFamily: "'Hanken Grotesk', sans-serif", outline: "none" }} />
-              </div>
-              <div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", color: "#847b6d", textTransform: "uppercase" as const, marginBottom: 7 }}>Phone</div>
-                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210"
-                  style={{ width: "100%", boxSizing: "border-box" as const, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, color: "#efe9dd", padding: "11px 14px", fontSize: 14, fontFamily: "'Hanken Grotesk', sans-serif", outline: "none" }} />
-              </div>
-            </div>
-            <div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", color: "#847b6d", textTransform: "uppercase" as const, marginBottom: 7 }}>Address line 1</div>
-              <input value={addressLine1} onChange={e => setAddressLine1(e.target.value)} placeholder="House / street / area"
-                style={{ width: "100%", boxSizing: "border-box" as const, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, color: "#efe9dd", padding: "11px 14px", fontSize: 14, fontFamily: "'Hanken Grotesk', sans-serif", outline: "none" }} />
-            </div>
-            <div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", color: "#847b6d", textTransform: "uppercase" as const, marginBottom: 7 }}>Address line 2 <span style={{ color: "#4a4538" }}>(optional)</span></div>
-              <input value={addressLine2} onChange={e => setAddressLine2(e.target.value)} placeholder="Apartment, landmark, etc."
-                style={{ width: "100%", boxSizing: "border-box" as const, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, color: "#efe9dd", padding: "11px 14px", fontSize: 14, fontFamily: "'Hanken Grotesk', sans-serif", outline: "none" }} />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-              <div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", color: "#847b6d", textTransform: "uppercase" as const, marginBottom: 7 }}>City</div>
-                <input value={city} onChange={e => setCity(e.target.value)}
-                  style={{ width: "100%", boxSizing: "border-box" as const, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, color: "#efe9dd", padding: "11px 14px", fontSize: 14, fontFamily: "'Hanken Grotesk', sans-serif", outline: "none" }} />
-              </div>
-              <div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", color: "#847b6d", textTransform: "uppercase" as const, marginBottom: 7 }}>State</div>
-                <input value={state} onChange={e => setState(e.target.value)}
-                  style={{ width: "100%", boxSizing: "border-box" as const, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, color: "#efe9dd", padding: "11px 14px", fontSize: 14, fontFamily: "'Hanken Grotesk', sans-serif", outline: "none" }} />
-              </div>
-              <div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", color: "#847b6d", textTransform: "uppercase" as const, marginBottom: 7 }}>Postal code</div>
-                <input value={postalCode} onChange={e => setPostalCode(e.target.value)}
-                  style={{ width: "100%", boxSizing: "border-box" as const, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, color: "#efe9dd", padding: "11px 14px", fontSize: 14, fontFamily: "'Hanken Grotesk', sans-serif", outline: "none" }} />
-              </div>
-            </div>
-            <div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", color: "#847b6d", textTransform: "uppercase" as const, marginBottom: 7 }}>Country</div>
-              <input value={country} onChange={e => setCountry(e.target.value)}
-                style={{ width: "100%", boxSizing: "border-box" as const, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, color: "#efe9dd", padding: "11px 14px", fontSize: 14, fontFamily: "'Hanken Grotesk', sans-serif", outline: "none" }} />
-            </div>
+            {fanCards.map((card, n) => {
+              const i = n - (fanCards.length - 1) / 2;
+              return (
+                <div
+                  key={card.key}
+                  className={styles.fanCard}
+                  style={{ "--i": i, "--abs": Math.abs(i), "--n": n + 1, zIndex: n + 1 } as React.CSSProperties}
+                >
+                  {/* The slot stays put so hover doesn't flicker; only this inner layer lifts out. */}
+                  <div className={styles.fanLift}>
+                    <DeckCard card={card} artist={artists[card.key]} eager />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          {error && (
-            <div style={{ marginTop: 18, fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#e07070", background: "rgba(224,112,112,0.08)", border: "1px solid rgba(224,112,112,0.2)", borderRadius: 8, padding: "12px 14px", lineHeight: 1.6 }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ marginTop: 22, paddingTop: 20, borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-            <div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.16em", color: "#6f6759", textTransform: "uppercase" as const, marginBottom: 4 }}>Total</div>
-              <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 28, color: ACCENT }}>{formatINR(totalPaise)}</div>
-            </div>
-            {formValid && !saving ? (
-              <RazorpayButton
-                amount={totalPaise}
-                description={`${projectTitle} — deck pre-order (× ${quantity})`}
-                label={`Pay ${formatINR(totalPaise)} →`}
-                onSuccess={handlePaymentSuccess}
-                onError={(msg) => setError(msg)}
-              />
-            ) : (
-              <button disabled style={{ height: 38, padding: "0 22px", borderRadius: 10, border: "none", background: "#2a241b", color: "#5f594f", fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 14, fontWeight: 700, cursor: "not-allowed" }}>
-                {saving ? "Saving order…" : "Fill in all required fields"}
-              </button>
-            )}
-          </div>
-        </div>
+        </header>
       </div>
+
+      {/* ─── Artist ticker ─── */}
+      {artistNames.length > 0 && (
+        <div className={styles.ticker} aria-label="Artists in the deck">
+          <div className={styles.tickerTrack}>
+            {[...artistNames, ...artistNames].map((name, i) => (
+              <span key={i} className={styles.tickerItem} aria-hidden={i >= artistNames.length}>
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className={styles.container}>
+        {/* ─── Principles ─── */}
+        <section className={styles.section}>
+          <div className={styles.principles}>
+            <div className={styles.principle}>
+              <span className={styles.principleNum}>01</span>
+              <h3>One card, one artist</h3>
+              <p>Each of the 52 cards and both jokers was made by a different artist — no two hands alike.</p>
+            </div>
+            <div className={styles.principle}>
+              <span className={styles.principleNum}>02</span>
+              <h3>One shared frame</h3>
+              <p>
+                Every artwork sits in the same template by The Holding, with a common back — so the deck plays as one,
+                at 57 × 88 mm.
+              </p>
+            </div>
+            <div className={styles.principle}>
+              <span className={styles.principleNum}>03</span>
+              <h3>Every sale, shared</h3>
+              <p>Each participating artist receives an equal share of the deck&apos;s sales revenue.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Checkout ─── */}
+        <section id="checkout" className={styles.section} style={{ paddingTop: 0 }}>
+          <div className={styles.sectionHead}>
+            <div>
+              <div className={styles.eyebrow}>Pre-order</div>
+              <h2 className={styles.sectionTitle}>
+                Reserve your <em>deck</em>
+              </h2>
+            </div>
+          </div>
+
+          <div className={styles.checkout}>
+            <div className={styles.panel} id="delivery-details">
+              {MAGIC_CHECKOUT_ENABLED ? (
+                <>
+                  <p className={styles.magicNote}>
+                    Choose how many decks you&apos;d like. You&apos;ll add your delivery address, pick a delivery option and
+                    pay in Razorpay&apos;s secure checkout.
+                  </p>
+                  <label className={styles.checkbox}>
+                    <input type="checkbox" checked={newsletterOptIn} onChange={e => setNewsletterOptIn(e.target.checked)} />
+                    Keep me posted on future drops and news
+                  </label>
+                </>
+              ) : (
+                <>
+                  <fieldset className={styles.fieldset}>
+                    <legend className={styles.legend}>Contact</legend>
+                    <div className={styles.fields}>
+                      <Field label="Full name" error={fieldErrors.name} className={styles.full}>
+                        <input className={fieldErrors.name ? styles.inputError : styles.input} autoComplete="name" value={shipping.name} onChange={e => update("name", e.target.value)} />
+                      </Field>
+                      <Field label="Email" error={fieldErrors.email}>
+                        <input type="email" className={fieldErrors.email ? styles.inputError : styles.input} autoComplete="email" placeholder="you@example.com" value={shipping.email} onChange={e => update("email", e.target.value)} />
+                      </Field>
+                      <Field label="Mobile number" error={fieldErrors.phone}>
+                        <input type="tel" className={fieldErrors.phone ? styles.inputError : styles.input} autoComplete="tel" placeholder="98765 43210" value={shipping.phone} onChange={e => update("phone", e.target.value)} />
+                      </Field>
+                    </div>
+                  </fieldset>
+
+                  <fieldset className={styles.fieldset}>
+                    <legend className={styles.legend}>Delivery address</legend>
+                    <div className={styles.fields}>
+                      <Field label="House / flat, street" error={fieldErrors.addressLine1} className={styles.full}>
+                        <input className={fieldErrors.addressLine1 ? styles.inputError : styles.input} autoComplete="address-line1" value={shipping.addressLine1} onChange={e => update("addressLine1", e.target.value)} />
+                      </Field>
+                      <Field label="Area, landmark" optional className={styles.full}>
+                        <input className={styles.input} autoComplete="address-line2" value={shipping.addressLine2} onChange={e => update("addressLine2", e.target.value)} />
+                      </Field>
+                      <Field label="PIN code" error={fieldErrors.pincode}>
+                        <input inputMode="numeric" maxLength={6} className={fieldErrors.pincode ? styles.inputError : styles.input} autoComplete="postal-code" value={shipping.pincode} onChange={e => update("pincode", e.target.value.replace(/\D/g, ""))} />
+                      </Field>
+                      <Field label="City" error={fieldErrors.city}>
+                        <input className={fieldErrors.city ? styles.inputError : styles.input} autoComplete="address-level2" value={shipping.city} onChange={e => update("city", e.target.value)} />
+                      </Field>
+                      <Field label="State" error={fieldErrors.state}>
+                        <select className={fieldErrors.state ? styles.inputError : styles.input} autoComplete="address-level1" value={shipping.state} onChange={e => update("state", e.target.value)}>
+                          <option value="" disabled>
+                            Select state
+                          </option>
+                          {INDIAN_STATES.map(s => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Field label="Country">
+                        <input className={styles.input} value="India" disabled />
+                      </Field>
+                    </div>
+                  </fieldset>
+
+                  <fieldset className={styles.fieldset}>
+                    <legend className={styles.legend}>Delivery method</legend>
+                    <div className={styles.methods}>
+                      {SHIPPING_METHODS.map(m => (
+                        <label key={m.id} className={shipping.shippingMethod === m.id ? styles.methodActive : styles.method}>
+                          <input type="radio" name="shipping-method" checked={shipping.shippingMethod === m.id} onChange={() => update("shippingMethod", m.id)} />
+                          <span className={styles.methodText}>
+                            <b>{m.name}</b>
+                            <span>{m.description}</span>
+                          </span>
+                          <span className={styles.methodFee}>{m.shipping_fee ? formatINR(m.shipping_fee) : "Free"}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <label className={styles.checkbox}>
+                    <input type="checkbox" checked={newsletterOptIn} onChange={e => setNewsletterOptIn(e.target.checked)} />
+                    Keep me posted on future drops and news
+                  </label>
+                </>
+              )}
+            </div>
+
+            <aside className={`${styles.panel} ${styles.summary}`}>
+              <div className={styles.summaryProduct}>
+                <div className={styles.summaryThumb}>
+                  <DeckBack />
+                  <DeckCard card={fanCards[1]} artist={artists[fanCards[1].key]} />
+                </div>
+                <div>
+                  <h3>{projectTitle}</h3>
+                  <p>Printed deck · 54 cards</p>
+                </div>
+              </div>
+
+              <div className={styles.qtyRow}>
+                <span className={styles.qtyLabel}>Quantity</span>
+                <div className={styles.stepper}>
+                  <button type="button" aria-label="Fewer decks" disabled={quantity <= 1} onClick={() => setQuantity(q => Math.max(1, q - 1))}>
+                    −
+                  </button>
+                  <span>{quantity}</span>
+                  <button type="button" aria-label="More decks" disabled={quantity >= MAX_QUANTITY} onClick={() => setQuantity(q => Math.min(MAX_QUANTITY, q + 1))}>
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.lines}>
+                <div className={styles.line}>
+                  <span>
+                    {quantity} × {formatINR(UNIT_PRICE_PAISE)}
+                  </span>
+                  <span>{formatINR(subtotalPaise)}</span>
+                </div>
+                <div className={styles.line}>
+                  <span>Delivery{selectedMethod && !MAGIC_CHECKOUT_ENABLED ? ` · ${selectedMethod.name.replace(" delivery", "")}` : ""}</span>
+                  <span>{shippingPaise === null ? "At checkout" : shippingPaise ? formatINR(shippingPaise) : "Free"}</span>
+                </div>
+              </div>
+
+              <div className={styles.total}>
+                <span>{shippingPaise === null ? "Subtotal" : "Total"}</span>
+                <span>{formatINR(totalPaise)}</span>
+              </div>
+
+              <button type="button" className={styles.payButton} onClick={handleCheckout} disabled={busy || !scriptReady}>
+                {busy ? "Processing…" : MAGIC_CHECKOUT_ENABLED ? "Checkout →" : `Pay ${formatINR(totalPaise)} →`}
+              </button>
+
+              {error && <div className={styles.errorBox}>{error}</div>}
+
+              <div className={styles.secure}>🔒 Secure payment via Razorpay</div>
+              <p className={styles.disclaimer}>Price is a placeholder and may change before the deck ships.</p>
+            </aside>
+          </div>
+        </section>
+
+        <footer className={styles.footer}>
+          <span className={styles.eyebrow}>54 Hands · The Holding</span>
+          <a href="/54-hands" className={styles.navLink}>
+            About the project →
+          </a>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  error,
+  optional,
+  className,
+  children,
+}: {
+  label: string;
+  error?: string;
+  optional?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`${styles.field} ${className ?? ""}`}>
+      <label>
+        {label} {optional && <small>(optional)</small>}
+      </label>
+      {children}
+      {error && <div className={styles.fieldError}>{error}</div>}
     </div>
   );
 }

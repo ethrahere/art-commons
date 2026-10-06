@@ -162,17 +162,17 @@ function parseCard(key: string): { value: string; suit: string } | null {
   return { value, suit };
 }
 
-// ─── Canvas constants — print-ready 300 DPI, 2.5 × 3.5 in playing card ──────
-const CW = 750;   // 2.5 in × 300 dpi
-const CH = 1050;  // 3.5 in × 300 dpi
+// ─── Canvas constants — print-ready 300 DPI, 57 × 88 mm playing card ────────
+const CW = 674;   // 57 mm × 300 dpi, rounded up
+const CH = 1040;  // 88 mm × 300 dpi, rounded up
 const ART_W = 540; // 1.8 in × 300 dpi
 const ART_H = 840; // 2.8 in × 300 dpi
-const ART_X = 105; // (750 − 540) / 2
-const ART_Y = 105; // (1050 − 840) / 2
-const CARD_DISPLAY_W = 300; // 2.5× downscale for screen
-const CARD_DISPLAY_H = 420;
-const HANDLE_X = 105;   // left-aligned with artwork area
-const HANDLE_BASELINE = 998; // matches reference card-front.png placement
+const ART_X = 67;  // (674 − 540) / 2
+const ART_Y = 100; // (1040 − 840) / 2
+const CARD_DISPLAY_W = 300; // ~2.25× downscale for screen
+const CARD_DISPLAY_H = Math.round((CARD_DISPLAY_W * CH) / CW);
+const HANDLE_X = ART_X;   // left-aligned with artwork area
+const HANDLE_BASELINE = CH - 52; // same distance from the bottom edge as the reference card-front.png
 
 // ─── Small card face (used in result panel) ───────────────────────────────────
 function CardFace({ cardKey, large }: { cardKey: string; large?: boolean }) {
@@ -230,7 +230,7 @@ function CardLookSection() {
 
   function CardImagePlaceholder({ label }: { label: string }) {
     return (
-      <div style={{ width: "100%", aspectRatio: "5/7", borderRadius: 14, border: `1px dashed ${T.border}`, background: T.bg, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 10 }}>
+      <div style={{ width: "100%", aspectRatio: "57/88", borderRadius: 14, border: `1px dashed ${T.border}`, background: T.bg, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 10 }}>
         <div style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.surfaceInactive}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <rect x="1" y="3" width="14" height="10" rx="2" stroke={T.textFaintest} strokeWidth="1.2" />
@@ -281,7 +281,7 @@ function CardLookSection() {
         </div>
       </div>
       <div style={{ marginTop: 16, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.textFainter, lineHeight: 1.6 }}>
-        Card dimensions: 2.5 × 3.5 in (750 × 1050 px at 300 dpi) — standard poker size. Artwork area: 1.8 × 2.8 in centered, with 0.35 in frame margin on all sides.
+        Card dimensions: 57 × 88 mm (674 × 1040 px at 300 dpi). Artwork area: 1.8 × 2.8 in (540 × 840 px) centered in the card.
       </div>
     </div>
   );
@@ -420,9 +420,9 @@ function ArtworkPreviewSection() {
       </p>
       <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" as const }}>
         <div style={{ flexShrink: 0 }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.12em", color: T.textFaint, textAlign: "center" as const, marginBottom: 4 }}>← 2.5 in / 750 px →</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.12em", color: T.textFaint, textAlign: "center" as const, marginBottom: 4 }}>← 57 mm / 674 px →</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.textFaint, writingMode: "vertical-rl" as const, transform: "rotate(180deg)", letterSpacing: "0.1em" }}>← 3.5 in / 1050 px →</div>
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.textFaint, writingMode: "vertical-rl" as const, transform: "rotate(180deg)", letterSpacing: "0.1em" }}>← 88 mm / 1040 px →</div>
             <div>
               <canvas ref={canvasRef} width={CW} height={CH} style={{ width: CARD_DISPLAY_W, height: CARD_DISPLAY_H, borderRadius: 8, display: "block", background: T.controlBg, border: `1px solid ${T.border}` }} />
               <a
@@ -455,7 +455,7 @@ function ArtworkPreviewSection() {
               </svg>
             </div>
             <div style={{ fontFamily: "'Hanken Grotesk', sans-serif", fontSize: 13.5, color: T.textSecondary, marginBottom: 5 }}>{artworkUrl ? "Click or drag to replace" : "Click or drag artwork here"}</div>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.textFaint }}>PNG or JPG — 750 × 1050 px at 300 dpi (standard playing card)</div>
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.textFaint }}>PNG or JPG — 674 × 1040 px at 300 dpi (57 × 88 mm card)</div>
             <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
           </div>
           <div style={{ marginBottom: 20 }}>
@@ -473,8 +473,8 @@ function ArtworkPreviewSection() {
           </div>
           <div style={{ display: "flex", flexDirection: "column" as const }}>
             {[
-              { label: "Card size", value: "750 × 1050 px", note: "2.5 × 3.5 in at 300 dpi — standard playing card" },
-              { label: "Artwork area", value: "540 × 840 px", note: "1.8 × 2.8 in — 105 px (0.35 in) margin each side" },
+              { label: "Card size", value: "674 × 1040 px", note: "57 × 88 mm at 300 dpi" },
+              { label: "Artwork area", value: "540 × 840 px", note: "1.8 × 2.8 in — centered in the card" },
               { label: "Template", value: "Provided", note: "card-front-template.png — the real printable frame" },
               { label: "Resolution", value: "300 dpi", note: "Print-ready — download to verify" },
             ].map(({ label, value, note }) => (
@@ -705,7 +705,7 @@ export default function FiftyFourHandsClient({ project, initialRegistrations, fo
                   { label: "Cards", value: `${takenCount} / ${totalSlots} claimed` },
                   { label: "Revenue split", value: "Equal per artist" },
                   { label: "Milestone", value: `${MILESTONE} decks → free deck` },
-                  { label: "Card size", value: "2.5 × 3.5 in" },
+                  { label: "Card size", value: "57 × 88 mm" },
                   { label: "Artwork deadline", value: artworkDeadline },
                 ].map(({ label, value }) => (
                   <div key={label}>
@@ -725,7 +725,7 @@ export default function FiftyFourHandsClient({ project, initialRegistrations, fo
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
                 {[
                   { step: "01", title: "Claim a card", body: "Register with your name and email. You receive one randomly assigned card from the 54-card deck." },
-                  { step: "02", title: "Create artwork", body: "Make original artwork sized 1.8 × 2.8 in, centered in the 2.5 × 3.5 in card. The Holding provides the template." },
+                  { step: "02", title: "Create artwork", body: "Make original artwork sized 1.8 × 2.8 in, centered in the 57 × 88 mm card. The Holding provides the template." },
                   { step: "03", title: "Submit via form", body: `Upload through the Google Form by ${artworkDeadline}. The Holding handles production, printing, and distribution.` },
                   { step: "04", title: "Earn & own", body: "Receive your equal share of every sale. At 250 decks, every artist gets a free copy of the deck." },
                 ].map(({ step, title, body }) => (
@@ -818,8 +818,8 @@ export default function FiftyFourHandsClient({ project, initialRegistrations, fo
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0 }}>
                 {[
                   { label: "Total cards", value: String(totalSlots), note: "4 suits × 13 + 2 jokers" },
-                  { label: "Card size", value: "2.5 × 3.5 in", note: "750 × 1050 px at 300 dpi" },
-                  { label: "Artwork area", value: "1.8 × 2.8 in", note: "540 × 840 px — 0.35 in margin each side" },
+                  { label: "Card size", value: "57 × 88 mm", note: "674 × 1040 px at 300 dpi" },
+                  { label: "Artwork area", value: "1.8 × 2.8 in", note: "540 × 840 px, centered in the card" },
                   { label: "Artists", value: `${totalSlots} unique`, note: "One card per artist" },
                   { label: "Template", value: "By The Holding", note: "Consistent frame across all 54 cards" },
                   { label: "Submission", value: "Google Form", note: "High-resolution digital file" },
@@ -1016,7 +1016,7 @@ export default function FiftyFourHandsClient({ project, initialRegistrations, fo
                         const claimant = registrations.get(key);
                         const isHighlighted = highlightCard === key;
                         return (
-                          <div key={key} id={`card-${key}`} title={claimant ?? "Available"} style={{ flex: 1, aspectRatio: "1/1.4", borderRadius: 5, border: isHighlighted ? `1px solid ${T.accent}` : claimant ? `1px solid ${T.ghostNumber}` : `1px solid ${T.ghostBorder}`, background: isHighlighted ? `rgba(${T.accentRgb},0.14)` : claimant ? T.sunken : `rgba(${T.accentRgb},0.03)`, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 1, minWidth: 0, transition: "border-color 0.15s", boxShadow: isHighlighted ? `0 0 12px ${T.accent}20` : "none" }}>
+                          <div key={key} id={`card-${key}`} title={claimant ?? "Available"} style={{ flex: 1, aspectRatio: "57/88", borderRadius: 5, border: isHighlighted ? `1px solid ${T.accent}` : claimant ? `1px solid ${T.ghostNumber}` : `1px solid ${T.ghostBorder}`, background: isHighlighted ? `rgba(${T.accentRgb},0.14)` : claimant ? T.sunken : `rgba(${T.accentRgb},0.03)`, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 1, minWidth: 0, transition: "border-color 0.15s", boxShadow: isHighlighted ? `0 0 12px ${T.accent}20` : "none" }}>
                             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, color: isHighlighted ? suitColor(suit, T) : claimant ? T.textFaintest : suitColor(suit, T), lineHeight: 1, opacity: claimant && !isHighlighted ? 0.5 : 1 }}>{value}</div>
                             {claimant ? (
                               <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 7, color: isHighlighted ? T.accent : T.textFaintest, lineHeight: 1, overflow: "hidden", maxWidth: "90%", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{claimant.split(" ")[0]}</div>
@@ -1038,7 +1038,7 @@ export default function FiftyFourHandsClient({ project, initialRegistrations, fo
                       const isHighlighted = highlightCard === joker;
                       const isRed = joker === "Joker Red";
                       return (
-                        <div key={joker} id={`card-${joker}`} title={claimant ?? joker} style={{ width: 46, aspectRatio: "1/1.4", borderRadius: 5, border: isHighlighted ? `1px solid ${T.accent}` : claimant ? `1px solid ${T.ghostNumber}` : `1px solid ${T.ghostBorder}`, background: isHighlighted ? `rgba(${T.accentRgb},0.14)` : claimant ? T.sunken : `rgba(${T.accentRgb},0.03)`, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 1, boxShadow: isHighlighted ? `0 0 12px ${T.accent}20` : "none" }}>
+                        <div key={joker} id={`card-${joker}`} title={claimant ?? joker} style={{ width: 46, aspectRatio: "57/88", borderRadius: 5, border: isHighlighted ? `1px solid ${T.accent}` : claimant ? `1px solid ${T.ghostNumber}` : `1px solid ${T.ghostBorder}`, background: isHighlighted ? `rgba(${T.accentRgb},0.14)` : claimant ? T.sunken : `rgba(${T.accentRgb},0.03)`, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: 1, boxShadow: isHighlighted ? `0 0 12px ${T.accent}20` : "none" }}>
                           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, color: claimant && !isHighlighted ? T.textFaintest : isRed ? T.redSuit : T.textSecondary, lineHeight: 1 }}>{isRed ? "J♥" : "J♠"}</div>
                           {claimant && <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: 7, color: isHighlighted ? T.accent : T.textFaintest, lineHeight: 1 }}>{claimant.split(" ")[0]}</div>}
                         </div>
