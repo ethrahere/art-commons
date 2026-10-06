@@ -518,6 +518,17 @@ select.input {
   color: var(--label);
 }
 
+.testBox {
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px dashed rgba(var(--accent-rgb), 0.45);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
 .errorBox {
   margin-top: 16px;
   font-size: 13px;

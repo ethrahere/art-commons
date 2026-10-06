@@ -104,7 +104,8 @@ export async function POST(request: Request) {
     postal_code: address.zipcode,
     country: address.country === "in" || address.country === "IN" ? "India" : (address.country ?? "India"),
     quantity,
-    unit_price_paise: UNIT_PRICE_PAISE,
+    // Read from the order so test checkouts record what was actually charged.
+    unit_price_paise: Number(notes.unit_price_paise) || UNIT_PRICE_PAISE,
     shipping_method: notes.shipping_method ? String(notes.shipping_method) : null,
     shipping_fee_paise: shippingFeePaise,
     total_amount_paise: Number(payment.amount),

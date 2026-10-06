@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { DeckBack, DeckCard } from "./DeckCard";
 import { DECK } from "./deck";
-import { MAX_QUANTITY, SHIPPING_METHODS, UNIT_PRICE_PAISE } from "./pricing";
+import { MAX_QUANTITY, SHIPPING_METHODS, TEST_TOTAL_PAISE, UNIT_PRICE_PAISE } from "./pricing";
 import {
   EMPTY_SHIPPING_DETAILS,
   INDIAN_STATES,
@@ -54,16 +54,27 @@ export default function PreOrderClient({ projectId, projectTitle, artists, fanKe
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  // ?test=<key> from the URL — the server decides whether it's valid.
+  const [testKey, setTestKey] = useState<string | null>(null);
 
   const artistNames = Object.values(artists);
-  const subtotalPaise = UNIT_PRICE_PAISE * quantity;
+  const unitPricePaise = testKey ? TEST_TOTAL_PAISE : UNIT_PRICE_PAISE;
+  const subtotalPaise = unitPricePaise * quantity;
   const selectedMethod = SHIPPING_METHODS.find(m => m.id === shipping.shippingMethod);
-  const shippingPaise = MAGIC_CHECKOUT_ENABLED ? null : selectedMethod?.shipping_fee ?? 0;
+  const shippingPaise = MAGIC_CHECKOUT_ENABLED ? null : testKey ? 0 : selectedMethod?.shipping_fee ?? 0;
   const totalPaise = subtotalPaise + (shippingPaise ?? 0);
 
   const fieldErrors: ShippingErrors = MAGIC_CHECKOUT_ENABLED
     ? {}
     : { ...serverFieldErrors, ...(showErrors ? validateShippingDetails(shipping, SHIPPING_METHOD_IDS) : {}) };
+
+  useEffect(() => {
+    const key = new URLSearchParams(window.location.search).get("test");
+    if (key) {
+      setTestKey(key);
+      setQuantity(1);
+    }
+  }, []);
 
   useEffect(() => {
     if (window.Razorpay) {
@@ -123,6 +134,7 @@ export default function PreOrderClient({ projectId, projectTitle, artists, fanKe
         projectId,
         quantity,
         newsletterOptIn,
+        ...(testKey ? { testKey } : {}),
         ...(MAGIC_CHECKOUT_ENABLED ? {} : { shipping }),
       }),
     });
@@ -415,7 +427,7 @@ export default function PreOrderClient({ projectId, projectTitle, artists, fanKe
                     −
                   </button>
                   <span>{quantity}</span>
-                  <button type="button" aria-label="More decks" disabled={quantity >= MAX_QUANTITY} onClick={() => setQuantity(q => Math.min(MAX_QUANTITY, q + 1))}>
+                  <button type="button" aria-label="More decks" disabled={quantity >= MAX_QUANTITY || Boolean(testKey)} onClick={() => setQuantity(q => Math.min(MAX_QUANTITY, q + 1))}>
                     +
                   </button>
                 </div>
@@ -424,7 +436,7 @@ export default function PreOrderClient({ projectId, projectTitle, artists, fanKe
               <div className={styles.lines}>
                 <div className={styles.line}>
                   <span>
-                    {quantity} × {formatINR(UNIT_PRICE_PAISE)}
+                    {quantity} × {formatINR(unitPricePaise)}
                   </span>
                   <span>{formatINR(subtotalPaise)}</span>
                 </div>
@@ -442,6 +454,13 @@ export default function PreOrderClient({ projectId, projectTitle, artists, fanKe
               <button type="button" className={styles.payButton} onClick={handleCheckout} disabled={busy || !scriptReady}>
                 {busy ? "Processing…" : MAGIC_CHECKOUT_ENABLED ? "Checkout →" : `Pay ${formatINR(totalPaise)} →`}
               </button>
+
+              {testKey && (
+                <div className={styles.testBox}>
+                  Test checkout: one deck for {formatINR(TEST_TOTAL_PAISE)}, delivery included. If Razorpay shows a
+                  different amount, the test key didn&apos;t match — close the popup without paying.
+                </div>
+              )}
 
               {error && <div className={styles.errorBox}>{error}</div>}
 

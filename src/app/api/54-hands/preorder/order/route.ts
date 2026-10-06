@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import type { Orders } from "razorpay/dist/types/orders";
-import { DECK_SKU, MAX_QUANTITY, SHIPPING_METHODS, UNIT_PRICE_PAISE } from "@/app/54-hands/pre-order/pricing";
+import { DECK_SKU, MAX_QUANTITY, SHIPPING_METHODS, TEST_TOTAL_PAISE, UNIT_PRICE_PAISE } from "@/app/54-hands/pre-order/pricing";
 import {
   MAGIC_CHECKOUT_ENABLED,
   normalizePhone,
@@ -21,18 +21,27 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
 
   const projectId: string = body?.projectId ?? "";
-  const quantity = Math.floor(Number(body?.quantity) || 0);
   const newsletterOptIn = Boolean(body?.newsletterOptIn);
+
+  // Owner-only test checkout: one deck at TEST_TOTAL_PAISE, delivery included.
+  // Only active when PREORDER_TEST_KEY is set on the server and the page sent it.
+  const testKey = process.env.PREORDER_TEST_KEY;
+  const isTest = Boolean(testKey) && body?.testKey === testKey;
+
+  const quantity = isTest ? 1 : Math.floor(Number(body?.quantity) || 0);
+  const unitPricePaise = isTest ? TEST_TOTAL_PAISE : UNIT_PRICE_PAISE;
 
   if (!projectId || quantity < 1 || quantity > MAX_QUANTITY) {
     return NextResponse.json({ error: "Missing or invalid fields." }, { status: 400 });
   }
 
-  const lineItemsTotal = UNIT_PRICE_PAISE * quantity;
+  const lineItemsTotal = unitPricePaise * quantity;
   const notes: Record<string, string | number> = {
     project_id: projectId,
     quantity,
+    unit_price_paise: unitPricePaise,
     newsletter_opt_in: newsletterOptIn ? "true" : "false",
+    ...(isTest ? { test_order: "true" } : {}),
   };
 
   let orderBody: Record<string, unknown>;
@@ -47,8 +56,8 @@ export async function POST(request: Request) {
           variant_id: DECK_SKU,
           name: "54 Hands — printed deck",
           description: "Pre-order of the printed 54 Hands card deck",
-          price: UNIT_PRICE_PAISE,
-          offer_price: UNIT_PRICE_PAISE,
+          price: unitPricePaise,
+          offer_price: unitPricePaise,
           quantity,
         },
       ],
@@ -71,12 +80,13 @@ export async function POST(request: Request) {
     }
 
     const method = SHIPPING_METHODS.find(m => m.id === shipping.shippingMethod)!;
-    orderBody = { amount: lineItemsTotal + method.shipping_fee };
+    const shippingFee = isTest ? 0 : method.shipping_fee;
+    orderBody = { amount: lineItemsTotal + shippingFee };
 
-    // Razorpay notes: max 15 keys, 256 chars each.
+    // Razorpay notes: max 15 keys (this makes up to 15 with test_order), 256 chars each.
     Object.assign(notes, {
       shipping_method: method.id,
-      shipping_fee: method.shipping_fee,
+      shipping_fee: shippingFee,
       name: shipping.name.trim().slice(0, 256),
       email: shipping.email.trim().slice(0, 256),
       phone: normalizePhone(shipping.phone),

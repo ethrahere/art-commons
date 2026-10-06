@@ -5,6 +5,11 @@ export const DECK_SKU = "54-hands-deck-v1";
 export const UNIT_PRICE_PAISE = 710 * 100;
 export const MAX_QUANTITY = 50;
 
+// Owner-only live test: a checkout opened with ?test=<PREORDER_TEST_KEY> charges
+// this total for one deck, delivery included, so the live payment flow can be
+// tried cheaply without changing the price for anyone else.
+export const TEST_TOTAL_PAISE = 10 * 100;
+
 // Delivery methods shown inside Razorpay Magic Checkout (served by
 // /api/54-hands/shipping-info). India-only; fees in paise.
 export const SHIPPING_METHODS = [
